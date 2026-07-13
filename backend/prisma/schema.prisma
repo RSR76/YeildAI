@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Forecast {
+  id                   String   @id @default(uuid())
+  commodity            String
+  state                String
+  district             String
+  market               String
+  date                 DateTime
+  currentModalPrice    Float
+  predictedPriceTrend  String
+  confidence           Float
+  confidenceBand       String
+  priceTrendScore      Float
+  probFalling          Float
+  probRising           Float
+  probStable           Float
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([commodity, state, district, market])
+  @@index([date])
+}
+
+model Crop {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  category          String?
+  typicalYield      Float?   // quintals per acre
+  costOfCultivation Float?   // per acre
+  growthDuration    Int?     // days
+  bestSeason        String?
+  
+  recommendations   Recommendation[]
+}
+
+model Recommendation {
+  id               String   @id @default(uuid())
+  cropId           String
+  crop             Crop     @relation(fields: [cropId], references: [id])
+  state            String
+  district         String
+  score            Float
+  expectedProfit   Float
+  confidenceScore  Float
+  reasoning        String?
+  createdAt        DateTime @default(now())
+
+  @@index([state, district])
+}
+
+model Broker {
+  id          String   @id @default(uuid())
+  name        String
+  location    String
+  contact     String
+  commodities String[]
+  rating      Float    @default(0.0)
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  title     String
+  type      String
+  data      Json
+  createdAt DateTime @default(now())
+}
+
+model UserSettings {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  location  String?
+  preferredCommodities String[]
+  notifications Boolean @default(true)
+  theme      String @default("light")
+}
