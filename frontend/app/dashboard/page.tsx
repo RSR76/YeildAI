@@ -216,7 +216,7 @@ function GlassCard({ children, className = "", style = {}, onClick }: { children
   return <div className={`glass-card ${className}`} style={style} onClick={onClick}>{children}</div>;
 }
 
-function SectionLabel({ eyebrow, title, icon: Icon }: { eyebrow: string; title: string; icon: any }) {
+function SectionLabel({ eyebrow, title, icon: Icon }: { eyebrow: string; title: string; icon: React.ComponentType<{ size?: number }> }) {
   return (
     <div className="section-label">
       <div className="section-eyebrow">
@@ -322,7 +322,7 @@ export default function Dashboard() {
                 <ReferenceLine x={0} stroke="var(--ink-soft)" />
                 <Tooltip
                   contentStyle={{ borderRadius: 12, border: "1px solid var(--line)", fontSize: 12.5, fontFamily: "var(--font-body)" }}
-                  formatter={(v: any) => [`${(v as number) > 0 ? "+" : ""}${v}`, "Balance"]}
+                  formatter={(v) => [`${Number(v) > 0 ? "+" : ""}${v}`, "Balance"]}
                 />
                 <Bar dataKey="balance" radius={[6, 6, 6, 6]} barSize={16}>
                   {balanceData.map((d) => (

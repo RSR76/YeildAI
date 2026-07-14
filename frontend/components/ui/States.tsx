@@ -1,5 +1,3 @@
-import { Card } from '@/components/ui/Card';
-
 export function Loading() {
   return <div className="p-4 text-stone-600">Loading...</div>;
 }
