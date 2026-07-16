@@ -1,24 +1,21 @@
 /**
  * Data service layer.
  *
- * Every function here first tries the real backend (via apiClient) and
- * transparently falls back to the mock data layer (lib/mockData.ts) if the
- * request fails — e.g. because the production CSV / database is not yet
- * available in this environment.
+ * Most functions here try the real backend (via apiClient) and transparently
+ * fall back to the mock data layer (lib/mockData.ts) if the request fails —
+ * e.g. because a backend module hasn't been built yet.
  *
- * Once the real backend is live everywhere, the try/catch fallbacks below
- * can be removed and these functions will keep working unchanged, since
- * pages only ever import from this file, never from lib/mockData.ts
- * directly.
+ * Forecast and recommendation data (Mandi Prices / Recommendations pages) is
+ * an exception: the backend for those is real and running locally, so those
+ * functions call the API directly with no mock fallback — a backend failure
+ * should surface as a visible error on the page, not silently swap in mock
+ * data.
  */
 
 import { apiClient } from './api';
-import type { Forecast, Recommendation, MarketAnalysis, Broker, Report } from './types';
+import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption } from './types';
 import {
     DEFAULT_LOCATION,
-    mockForecasts,
-    mockPriceHistory,
-    mockRecommendations,
     mockMarketAnalysis,
     mockBrokers,
     mockReports,
@@ -35,12 +32,7 @@ async function withFallback<T>(request: () => Promise<T>, fallback: T): Promise<
 }
 
 export function getAllLatestForecasts(commodity?: string): Promise<Forecast[]> {
-    return withFallback(
-        () => apiClient<Forecast[]>('/forecast/all-latest', commodity ? { commodity } : undefined),
-        commodity
-            ? mockForecasts.filter((f) => f.commodity.toLowerCase() === commodity.toLowerCase())
-            : mockForecasts
-    );
+    return apiClient<Forecast[]>('/forecast/all-latest', commodity ? { commodity } : undefined);
 }
 
 export function getForecastHistory(
@@ -49,34 +41,30 @@ export function getForecastHistory(
     district: string,
     market: string
 ): Promise<Forecast[]> {
-    return withFallback(
-        () => apiClient<Forecast[]>('/forecast/history', { commodity, state, district, market }),
-        mockPriceHistory
-    );
+    return apiClient<Forecast[]>('/forecast/history', { commodity, state, district, market });
 }
 
 export function getCommodities(): Promise<string[]> {
-    return withFallback(
-        () => apiClient<string[]>('/forecast/commodities'),
-        Array.from(new Set(mockForecasts.map((f) => f.commodity))).sort()
-    );
+    return apiClient<string[]>('/forecast/commodities');
+}
+
+export function getMarkets(commodity?: string): Promise<MarketOption[]> {
+    return apiClient<MarketOption[]>('/forecast/markets', commodity ? { commodity } : undefined);
+}
+
+export function getLocations(): Promise<Location[]> {
+    return apiClient<Location[]>('/forecast/locations');
 }
 
 export function getRecommendations(
     state: string = DEFAULT_LOCATION.state,
     district: string = DEFAULT_LOCATION.district
 ): Promise<Recommendation[]> {
-    return withFallback(
-        () => apiClient<Recommendation[]>('/recommendations', { state, district }),
-        mockRecommendations
-    );
+    return apiClient<Recommendation[]>('/recommendations', { state, district });
 }
 
 export function getMarketAnalysis(commodity: string, state: string): Promise<MarketAnalysis> {
-    return withFallback(
-        () => apiClient<MarketAnalysis>('/analysis', { commodity, state }),
-        mockMarketAnalysis
-    );
+    return withFallback(() => apiClient<MarketAnalysis>('/analysis', { commodity, state }), mockMarketAnalysis);
 }
 
 export function getBrokers(): Promise<Broker[]> {

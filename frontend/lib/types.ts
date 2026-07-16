@@ -27,6 +27,18 @@ export interface Forecast {
     probStable: number;
 }
 
+export interface Location {
+    state: string;
+    district: string;
+}
+
+export interface MarketOption {
+    commodity: string;
+    state: string;
+    district: string;
+    market: string;
+}
+
 export interface Crop {
     id: string;
     name: string;

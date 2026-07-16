@@ -1,0 +1,7 @@
+commodity,state,district,market,date,current_modal_price,predicted_price_trend,confidence,confidence_band,price_trend_score,prob_Falling,prob_Rising,prob_Stable
+Tomato,Rank State A,Rank District A,Market,2026-01-01,1000.0,Falling,0.95,High,0.9,0.9,0.05,0.05
+Onion,Rank State A,Rank District A,Market,2026-01-01,3000.0,Rising,0.5,Medium,0.1,0.2,0.5,0.3
+Wheat,Rank State B,Rank District B,Market,2026-01-01,1600.0,Rising,0.95,High,0.9,0.02,0.9,0.08
+Rice,Rank State B,Rank District B,Market,2026-01-01,1600.0,Rising,0.4,Low,0.1,0.3,0.4,0.3
+Potato,Rank State C,Rank District C,Market,2026-01-01,1700.0,Falling,0.6,Medium,-0.5,0.6,0.15,0.25
+Onion,Rank State C,Rank District C,Market,2026-01-01,1000.0,Falling,0.3,Low,-0.9,0.7,0.1,0.2
