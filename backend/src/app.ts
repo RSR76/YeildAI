@@ -19,6 +19,7 @@ app.get('/api/forecast/latest', forecastController.getLatest);
 app.get('/api/forecast/all-latest', forecastController.getAllLatest);
 app.get('/api/forecast/commodities', forecastController.getCommodities);
 app.get('/api/forecast/markets', forecastController.getMarkets);
+app.get('/api/forecast/locations', forecastController.getLocations);
 app.get('/api/forecast/history', forecastController.getHistory);
 
 // Recommendation Routes

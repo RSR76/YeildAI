@@ -1,61 +1,35 @@
-import prisma from '../lib/prisma.js';
+import * as csvForecastIndex from '../lib/csvForecastIndex.js';
 
+/**
+ * Serves forecasts from the local CSV-backed provider (genuine precomputed
+ * RandomForestClassifier output — see csvForecastIndex.ts). This is a
+ * drop-in replacement for the previous Prisma-backed implementation; the
+ * Prisma models and prisma/schema.prisma are untouched, so this can be
+ * swapped back to querying `prisma.forecast` directly once a real
+ * PostgreSQL DATABASE_URL is available locally.
+ */
 export class ForecastService {
   async getLatestForecast(commodity: string, state: string, district: string, market: string) {
-    return prisma.forecast.findFirst({
-      where: {
-        commodity: { equals: commodity, mode: 'insensitive' },
-        state: { equals: state, mode: 'insensitive' },
-        district: { equals: district, mode: 'insensitive' },
-        market: { equals: market, mode: 'insensitive' },
-      },
-      orderBy: { date: 'desc' },
-    });
+    return csvForecastIndex.getLatestForecast(commodity, state, district, market);
   }
 
   async getAllLatestForecasts(commodity?: string) {
-    // This is more complex in SQL. We need the latest date for each market.
-    // For simplicity in MVP, we can fetch all and group or use a raw query.
-    // Or we can use distinct on commodity, state, district, market.
-    
-    return prisma.forecast.findMany({
-      where: commodity ? { commodity: { equals: commodity, mode: 'insensitive' } } : {},
-      distinct: ['commodity', 'state', 'district', 'market'],
-      orderBy: { date: 'desc' },
-    });
+    return csvForecastIndex.getAllLatestForecasts(commodity);
   }
 
   async listAvailableCommodities() {
-    const result = await prisma.forecast.findMany({
-      distinct: ['commodity'],
-      select: { commodity: true },
-      orderBy: { commodity: 'asc' },
-    });
-    return result.map((r: any) => r.commodity);
+    return csvForecastIndex.listAvailableCommodities();
   }
 
   async listAvailableMarkets(commodity?: string) {
-    return prisma.forecast.findMany({
-      where: commodity ? { commodity: { equals: commodity, mode: 'insensitive' } } : {},
-      distinct: ['commodity', 'state', 'district', 'market'],
-      select: {
-        commodity: true,
-        state: true,
-        district: true,
-        market: true,
-      },
-    });
+    return csvForecastIndex.listAvailableMarkets(commodity);
+  }
+
+  async listAvailableLocations() {
+    return csvForecastIndex.listAvailableLocations();
   }
 
   async getPriceHistory(commodity: string, state: string, district: string, market: string) {
-    return prisma.forecast.findMany({
-      where: {
-        commodity: { equals: commodity, mode: 'insensitive' },
-        state: { equals: state, mode: 'insensitive' },
-        district: { equals: district, mode: 'insensitive' },
-        market: { equals: market, mode: 'insensitive' },
-      },
-      orderBy: { date: 'asc' },
-    });
+    return csvForecastIndex.getPriceHistory(commodity, state, district, market);
   }
 }

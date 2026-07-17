@@ -1,1 +1,4 @@
 .DS_Store
+
+# Real forecast lookup data (large, generated offline, never committed)
+/data/
