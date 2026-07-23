@@ -3,6 +3,7 @@
   "compilerOptions": {
     // File Layout
     "outDir": "./dist",
+    "rootDir": "./src",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -38,5 +39,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests", "prisma"]
 }

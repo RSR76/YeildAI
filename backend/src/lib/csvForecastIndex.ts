@@ -251,18 +251,101 @@ function buildIndex(csvPath: string): BuiltIndex {
   };
 }
 
-let cached: BuiltIndex | null = null;
+export type ReadinessState =
+  | { status: 'initializing'; startedAt: number }
+  | { status: 'ready'; startedAt: number; readyAt: number; commodityCount: number; locationCount: number }
+  | { status: 'failed'; startedAt: number; error: string };
 
+let cached: BuiltIndex | null = null;
+let readiness: ReadinessState = { status: 'initializing', startedAt: Date.now() };
+
+function countLocations(idx: BuiltIndex): number {
+  const keys = new Set<string>();
+  for (const record of idx.latestByKey.values()) {
+    keys.add(`${record.state.trim().toLowerCase()}|${record.district.trim().toLowerCase()}|${record.market.trim().toLowerCase()}`);
+  }
+  return keys.size;
+}
+
+/**
+ * No lazy fallback here on purpose: a request that reaches this function
+ * before startup initialization has completed throws instead of silently
+ * building the index inline. The only supported way to make the index
+ * available is initializeForecastIndex() (production startup) or the
+ * test-only hooks below — never an on-demand build triggered by a live
+ * request, which would bypass the /ready gating in app.ts.
+ */
 function getIndex(): BuiltIndex {
   if (!cached) {
-    cached = buildIndex(resolveCsvPath());
+    throw new Error('Forecast index is not initialized. Call initializeForecastIndex() during startup before serving requests.');
   }
   return cached;
 }
 
-/** Test-only hook: forces a rebuild against a specific CSV path. */
+/**
+ * Loads and prepares the forecast index during backend startup. Safe to call
+ * once at process boot; updates the module's readiness state as it runs so
+ * GET /ready and the request-gating middleware in app.ts can reflect it.
+ */
+export function initializeForecastIndex(): void {
+  const csvPath = resolveCsvPath();
+  const startedAt = Date.now();
+  readiness = { status: 'initializing', startedAt };
+  console.log(`[forecastIndex] csv path: ${csvPath}`);
+  console.log('[forecastIndex] initialization starting');
+  try {
+    const built = buildIndex(csvPath);
+    cached = built;
+    const readyAt = Date.now();
+    const commodityCount = built.commodities.length;
+    const locationCount = countLocations(built);
+    readiness = { status: 'ready', startedAt, readyAt, commodityCount, locationCount };
+    console.log(
+      `[forecastIndex] initialization complete in ${readyAt - startedAt}ms — commodities=${commodityCount} locations=${locationCount}`
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    readiness = { status: 'failed', startedAt, error: message };
+    console.error(`[forecastIndex] initialization failed after ${Date.now() - startedAt}ms: ${message}`);
+  }
+}
+
+export function getReadinessState(): ReadinessState {
+  return readiness;
+}
+
+/**
+ * Test-only hook: builds the index against a specific CSV path (or the
+ * resolved default) and resets readiness back to a neutral 'initializing'
+ * state — it does NOT mark the service ready. Tests that exercise the
+ * app-level readiness gate must call __markReadyForTests() or
+ * __setReadinessForTests() explicitly afterward; tests that only call the
+ * exported getters/functions directly don't need readiness at all, since
+ * those read from `cached` regardless of readiness state.
+ */
 export function __resetForTests(csvPath?: string): void {
   cached = buildIndex(csvPath ?? resolveCsvPath());
+  readiness = { status: 'initializing', startedAt: Date.now() };
+}
+
+/** Test-only hook: marks the index built by __resetForTests as ready. */
+export function __markReadyForTests(): void {
+  if (!cached) {
+    throw new Error('__markReadyForTests requires __resetForTests to be called first');
+  }
+  const now = Date.now();
+  readiness = {
+    status: 'ready',
+    startedAt: now,
+    readyAt: now,
+    commodityCount: cached.commodities.length,
+    locationCount: countLocations(cached),
+  };
+}
+
+/** Test-only hook: forces an arbitrary readiness state, e.g. to test 'failed'. */
+export function __setReadinessForTests(state: ReadinessState): void {
+  readiness = state;
 }
 
 export function getLatestForecast(commodity: string, state: string, district: string, market: string): ForecastRecord | null {
