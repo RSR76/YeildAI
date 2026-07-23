@@ -1,5 +1,5 @@
-export function Loading() {
-  return <div className="p-4 text-stone-600">Loading...</div>;
+export function Loading({ message = 'Loading...' }: { message?: string } = {}) {
+  return <div className="p-4 text-stone-600">{message}</div>;
 }
 
 export function ErrorView({ message }: { message: string }) {

@@ -37,10 +37,13 @@ export default function MandiPricesPage() {
   const [history, setHistory] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [waking, setWaking] = useState(false);
+
+  const onRetry = () => setWaking(true);
 
   // Commodity options, fetched once from the real backend.
   useEffect(() => {
-    getCommodities()
+    getCommodities({ onRetry })
       .then((list) => {
         setCommodities(list);
         if (list.length > 0 && !list.includes(DEFAULT_COMMODITY)) {
@@ -56,7 +59,7 @@ export default function MandiPricesPage() {
   useEffect(() => {
     setMarkets(null);
     setMarketsError(null);
-    getMarkets(commodity)
+    getMarkets(commodity, { onRetry })
       .then(setMarkets)
       .catch((err) => setMarketsError(err.message));
   }, [commodity]);
@@ -105,12 +108,15 @@ export default function MandiPricesPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    getAllLatestForecasts(commodity)
+    getAllLatestForecasts(commodity, { onRetry })
       .then((all) => {
         setForecasts(all.filter((f) => f.state === state && f.district === district));
       })
       .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setWaking(false);
+      });
   }, [commodity, state, district]);
 
   // Load the price history chart for the selected market.
@@ -173,7 +179,7 @@ export default function MandiPricesPage() {
     return (
       <PageWrapper title="Mandi Prices">
         {selectors}
-        <Loading />
+        <Loading message={waking ? 'The backend is waking up. This can take up to a minute.' : undefined} />
       </PageWrapper>
     );
   }

@@ -31,12 +31,15 @@ export default function RecommendationsPage() {
   const [data, setData] = useState<Recommendation[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [waking, setWaking] = useState(false);
+
+  const onRetry = () => setWaking(true);
 
   // Location options for the selectors, populated from the real forecast
   // CSV via the backend — this does not block the initial recommendations
   // load below, which uses the known-good default location right away.
   useEffect(() => {
-    getLocations()
+    getLocations({ onRetry })
       .then(setLocations)
       .catch((err) => setLocationsError(err.message));
   }, []);
@@ -69,10 +72,13 @@ export default function RecommendationsPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    getRecommendations(state, district)
+    getRecommendations(state, district, { onRetry })
       .then(setData)
       .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setWaking(false);
+      });
   }, [state, district]);
 
   const chartData = useMemo(
@@ -108,7 +114,7 @@ export default function RecommendationsPage() {
     return (
       <PageWrapper title="Crop Recommendations">
         {locationSelectors}
-        <Loading />
+        <Loading message={waking ? 'The backend is waking up. This can take up to a minute.' : undefined} />
       </PageWrapper>
     );
   }

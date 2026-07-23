@@ -12,7 +12,7 @@
  * data.
  */
 
-import { apiClient } from './api';
+import { apiClient, type ApiClientOptions } from './api';
 import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption } from './types';
 import {
     DEFAULT_LOCATION,
@@ -31,36 +31,38 @@ async function withFallback<T>(request: () => Promise<T>, fallback: T): Promise<
     }
 }
 
-export function getAllLatestForecasts(commodity?: string): Promise<Forecast[]> {
-    return apiClient<Forecast[]>('/forecast/all-latest', commodity ? { commodity } : undefined);
+export function getAllLatestForecasts(commodity?: string, options?: ApiClientOptions): Promise<Forecast[]> {
+    return apiClient<Forecast[]>('/forecast/all-latest', commodity ? { commodity } : undefined, options);
 }
 
 export function getForecastHistory(
     commodity: string,
     state: string,
     district: string,
-    market: string
+    market: string,
+    options?: ApiClientOptions
 ): Promise<Forecast[]> {
-    return apiClient<Forecast[]>('/forecast/history', { commodity, state, district, market });
+    return apiClient<Forecast[]>('/forecast/history', { commodity, state, district, market }, options);
 }
 
-export function getCommodities(): Promise<string[]> {
-    return apiClient<string[]>('/forecast/commodities');
+export function getCommodities(options?: ApiClientOptions): Promise<string[]> {
+    return apiClient<string[]>('/forecast/commodities', undefined, options);
 }
 
-export function getMarkets(commodity?: string): Promise<MarketOption[]> {
-    return apiClient<MarketOption[]>('/forecast/markets', commodity ? { commodity } : undefined);
+export function getMarkets(commodity?: string, options?: ApiClientOptions): Promise<MarketOption[]> {
+    return apiClient<MarketOption[]>('/forecast/markets', commodity ? { commodity } : undefined, options);
 }
 
-export function getLocations(): Promise<Location[]> {
-    return apiClient<Location[]>('/forecast/locations');
+export function getLocations(options?: ApiClientOptions): Promise<Location[]> {
+    return apiClient<Location[]>('/forecast/locations', undefined, options);
 }
 
 export function getRecommendations(
     state: string = DEFAULT_LOCATION.state,
-    district: string = DEFAULT_LOCATION.district
+    district: string = DEFAULT_LOCATION.district,
+    options?: ApiClientOptions
 ): Promise<Recommendation[]> {
-    return apiClient<Recommendation[]>('/recommendations', { state, district });
+    return apiClient<Recommendation[]>('/recommendations', { state, district }, options);
 }
 
 export function getMarketAnalysis(commodity: string, state: string): Promise<MarketAnalysis> {
