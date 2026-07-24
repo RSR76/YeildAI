@@ -49,6 +49,20 @@ export interface Crop {
     bestSeason?: string | null;
 }
 
+export type ReasoningDirection = 'positive' | 'risk' | 'informational';
+
+export interface ReasoningFactor {
+    factor: string;
+    detail: string;
+    direction: ReasoningDirection;
+}
+
+export interface RecommendationReasoning {
+    summary: string;
+    factors: ReasoningFactor[];
+    limitations: string[];
+}
+
 export interface Recommendation {
     cropId: string;
     name: string;
@@ -60,6 +74,14 @@ export interface Recommendation {
     currentPrice: number;
     bestSeason?: string | null;
     growthDuration?: number | null;
+    // Additive fields for the "Full Reasoning" feature — optional so existing
+    // consumers (including the mock data layer) remain valid without them.
+    confidenceBand?: ConfidenceBand;
+    probFalling?: number;
+    probRising?: number;
+    probStable?: number;
+    predictedPrice?: number;
+    reasoning?: RecommendationReasoning;
 }
 
 export interface MarketAnalysis {
