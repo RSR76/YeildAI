@@ -4,6 +4,7 @@ import cors from 'cors';
 import { ForecastController } from './controllers/forecast.controller.js';
 import { RecommendationController } from './controllers/recommendation.controller.js';
 import { BrokerController, CropController } from './controllers/misc.controller.js';
+import { GeocodeController } from './controllers/geocode.controller.js';
 import { getReadinessState } from './lib/csvForecastIndex.js';
 
 const app = express();
@@ -15,6 +16,7 @@ const forecastController = new ForecastController();
 const recommendationController = new RecommendationController();
 const brokerController = new BrokerController();
 const cropController = new CropController();
+const geocodeController = new GeocodeController();
 
 /**
  * Gates forecast/recommendation routes on the forecast index readiness
@@ -38,6 +40,10 @@ app.get('/api/forecast/history', requireForecastIndexReady, forecastController.g
 // Recommendation Routes
 app.get('/api/recommendations', requireForecastIndexReady, recommendationController.getRecommendations);
 app.get('/api/analysis', requireForecastIndexReady, recommendationController.getMarketAnalysis);
+
+// Geocode Routes — gated on the forecast index because matching a resolved
+// place against a supported location requires listAvailableLocations().
+app.get('/api/geocode/reverse', requireForecastIndexReady, geocodeController.reverseGeocode);
 
 // Misc Routes (static data, independent of the forecast index)
 app.get('/api/brokers', brokerController.getAll);

@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -18,8 +18,9 @@ import { Loading, ErrorView } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { TrendBadge, ConfidenceBadge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
+import { LocationPicker } from '@/components/map/LocationPicker';
 import { getRecommendations, getLocations, DEFAULT_LOCATION } from '@/lib/dataService';
-import type { Recommendation, Location, ReasoningDirection } from '@/lib/types';
+import type { Recommendation, Location, ReasoningDirection, ReverseGeocodeResult } from '@/lib/types';
 
 const DIRECTION_STYLES: Record<ReasoningDirection, { label: string; className: string }> = {
   positive: { label: 'Positive', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
@@ -219,6 +220,21 @@ export default function RecommendationsPage() {
 
   const onRetry = () => setWaking(true);
 
+  // Maps a resolved map location onto the existing state/district selectors.
+  // A full match sets both (the existing state/district effects below then
+  // fetch recommendations exactly once, the same way a manual dropdown
+  // change already does). A state-only match sets just the state and lets
+  // the existing district-snap effect settle on a supported district for
+  // the user to review. An unsupported location changes nothing, preserving
+  // the current recommendation selection.
+  const handleLocationResolved = useCallback((result: ReverseGeocodeResult) => {
+    if (!result.matchedState) return;
+    setState(result.matchedState);
+    if (result.matchedDistrict) {
+      setDistrict(result.matchedDistrict);
+    }
+  }, []);
+
   // Location options for the selectors, populated from the real forecast
   // CSV via the backend — this does not block the initial recommendations
   // load below, which uses the known-good default location right away.
@@ -291,6 +307,7 @@ export default function RecommendationsPage() {
       {locationsError && (
         <p className="mt-3 text-xs text-red-600">Could not load the full location list: {locationsError}</p>
       )}
+      <LocationPicker onLocationResolved={handleLocationResolved} />
     </Card>
   );
 
@@ -326,11 +343,17 @@ export default function RecommendationsPage() {
 
   return (
     <PageWrapper title="Crop Recommendations">
-      <p className="text-sm text-stone-500 -mt-4 mb-2">
+      {locationSelectors}
+
+      {/* Kept after locationSelectors (not before) so the Location card is
+          the first child in every branch of this component's conditional
+          early-returns (loading/error/empty/success) — otherwise React's
+          positional reconciliation would unmount+remount LocationPicker on
+          every loading transition, silently collapsing the map panel and
+          discarding its pin/status right after a location match. */}
+      <p className="text-sm text-stone-500">
         Ranked for {district}, {state} based on price trend signals and MSP margins.
       </p>
-
-      {locationSelectors}
 
       {!hasProfitablePick && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
