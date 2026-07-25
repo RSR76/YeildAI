@@ -13,7 +13,7 @@
  */
 
 import { apiClient, type ApiClientOptions } from './api';
-import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption } from './types';
+import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption, ReverseGeocodeResult } from './types';
 import {
     DEFAULT_LOCATION,
     mockMarketAnalysis,
@@ -63,6 +63,17 @@ export function getRecommendations(
     options?: ApiClientOptions
 ): Promise<Recommendation[]> {
     return apiClient<Recommendation[]>('/recommendations', { state, district }, options);
+}
+
+/**
+ * Resolves a map pin's coordinates to a place name and, when possible, a
+ * supported (state, district) pair from the forecast dataset. No mock
+ * fallback: a backend failure must surface as a visible error so the caller
+ * can fall back to the manual state/district selectors, not silently swap
+ * in fabricated location data.
+ */
+export function reverseGeocode(latitude: number, longitude: number, options?: ApiClientOptions): Promise<ReverseGeocodeResult> {
+    return apiClient<ReverseGeocodeResult>('/geocode/reverse', { lat: String(latitude), lon: String(longitude) }, options);
 }
 
 export function getMarketAnalysis(commodity: string, state: string): Promise<MarketAnalysis> {

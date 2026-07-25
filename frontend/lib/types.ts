@@ -49,6 +49,20 @@ export interface Crop {
     bestSeason?: string | null;
 }
 
+export type ReasoningDirection = 'positive' | 'risk' | 'informational';
+
+export interface ReasoningFactor {
+    factor: string;
+    detail: string;
+    direction: ReasoningDirection;
+}
+
+export interface RecommendationReasoning {
+    summary: string;
+    factors: ReasoningFactor[];
+    limitations: string[];
+}
+
 export interface Recommendation {
     cropId: string;
     name: string;
@@ -60,6 +74,14 @@ export interface Recommendation {
     currentPrice: number;
     bestSeason?: string | null;
     growthDuration?: number | null;
+    // Additive fields for the "Full Reasoning" feature — optional so existing
+    // consumers (including the mock data layer) remain valid without them.
+    confidenceBand?: ConfidenceBand;
+    probFalling?: number;
+    probRising?: number;
+    probStable?: number;
+    predictedPrice?: number;
+    reasoning?: RecommendationReasoning;
 }
 
 export interface MarketAnalysis {
@@ -118,6 +140,34 @@ export interface YieldPoint {
     predicted: number | null;
 }
         
+/**
+ * Map/reverse-geocoding types for the "choose on map" pin-selection flow on
+ * the Recommendations page. Pin selection only — no area/polygon selection,
+ * no farm persistence.
+ */
+export interface SelectedCoordinates {
+    latitude: number;
+    longitude: number;
+}
+
+export type GeocodeSource = 'nominatim';
+
+/** Mirrors backend/src/services/geocode.service.ts's ReverseGeocodeResult. */
+export interface ReverseGeocodeResult {
+    latitude: number;
+    longitude: number;
+    displayName: string | null;
+    state: string | null;
+    district: string | null;
+    country: string | null;
+    source: GeocodeSource;
+    matchedState: string | null;
+    matchedDistrict: string | null;
+    isSupportedLocation: boolean;
+}
+
+export type LocationMatchStatus = 'idle' | 'loading' | 'success' | 'partial' | 'unsupported' | 'error';
+
 export interface WeatherDay {
     day: string;
     date: string;

@@ -1,6 +1,104 @@
 import * as csvForecastIndex from '../lib/csvForecastIndex.js';
 import { STATIC_CROPS } from '../lib/staticData.js';
 
+/**
+ * Explainability types for the "Full Reasoning" feature. These are additive
+ * to the Recommendation response shape — every field here is derived only
+ * from signals the scoring/profit logic below actually uses (trend,
+ * confidence, class probabilities, price). Nothing here references soil,
+ * season, or any signal the current implementation doesn't read.
+ */
+export type ReasoningDirection = 'positive' | 'risk' | 'informational';
+
+export interface ReasoningFactor {
+  factor: string;
+  detail: string;
+  direction: ReasoningDirection;
+}
+
+export interface RecommendationReasoning {
+  summary: string;
+  factors: ReasoningFactor[];
+  limitations: string[];
+}
+
+const SOIL_LIMITATION_NOTE = 'Farm-specific soil suitability is not yet included in this recommendation.';
+
+function formatRupees(value: number): string {
+  return `₹${Math.round(value).toLocaleString('en-IN')}`;
+}
+
+/**
+ * Builds a deterministic, structured explanation from the same signals
+ * getRecommendations() already used to compute score/expectedProfit above —
+ * no new data source, no fabricated factor. Season/growth-duration are
+ * deliberately excluded: they're displayed elsewhere but never feed the
+ * score or profit formula, so claiming them as a "reason" would misrepresent
+ * what the ranking actually did.
+ */
+function buildReasoning(params: {
+  predictedPriceTrend: string;
+  confidence: number;
+  confidenceBand: string;
+  currentModalPrice: number;
+  expectedPrice: number;
+  expectedProfit: number;
+}): RecommendationReasoning {
+  const { predictedPriceTrend, confidence, confidenceBand, currentModalPrice, expectedPrice, expectedProfit } = params;
+
+  const factors: ReasoningFactor[] = [];
+
+  const trendDirection: ReasoningDirection =
+    predictedPriceTrend === 'Rising' ? 'positive' : predictedPriceTrend === 'Falling' ? 'risk' : 'informational';
+  factors.push({
+    factor: 'Price trend',
+    detail: `The forecast model predicts a ${predictedPriceTrend.toLowerCase()} price trend for this crop over the next 7 days.`,
+    direction: trendDirection,
+  });
+
+  const confidenceDirection: ReasoningDirection =
+    confidenceBand === 'High' ? 'positive' : confidenceBand === 'Low' ? 'risk' : 'informational';
+  factors.push({
+    factor: 'Forecast confidence',
+    detail: `Model confidence in this trend is ${Math.round(confidence * 100)}% (${confidenceBand}).`,
+    direction: confidenceDirection,
+  });
+
+  const isProfitable = expectedProfit > 0;
+  factors.push({
+    factor: isProfitable ? 'Expected profit' : 'Expected loss',
+    detail: isProfitable
+      ? `Estimated profit is ${formatRupees(expectedProfit)} per acre at a projected price of ${formatRupees(expectedPrice)} (current price ${formatRupees(currentModalPrice)}).`
+      : `This crop is projected to lose ${formatRupees(Math.abs(expectedProfit))} per acre at a projected price of ${formatRupees(expectedPrice)} (current price ${formatRupees(currentModalPrice)}).`,
+    direction: isProfitable ? 'positive' : 'risk',
+  });
+
+  const limitations: string[] = [SOIL_LIMITATION_NOTE];
+  if (confidenceBand !== 'High') {
+    limitations.push(`Forecast confidence is ${confidenceBand.toLowerCase()} — treat this prediction with extra caution.`);
+  }
+
+  // Profitability and trend direction can disagree (e.g. a Falling trend can
+  // still leave yield*price above cost) — the summary must not imply the
+  // trend caused a profit it didn't support, so the two are phrased
+  // independently rather than assuming "profitable" means "the trend helped".
+  // A Stable trend is neither a tailwind nor a headwind, so it gets neutral
+  // wording rather than "despite", which is reserved for the genuine
+  // Falling-but-profitable case.
+  let summary: string;
+  if (!isProfitable) {
+    summary = `Despite a ${predictedPriceTrend.toLowerCase()} trend, this crop is not projected to be profitable at current costs.`;
+  } else if (trendDirection === 'positive') {
+    summary = `A ${predictedPriceTrend.toLowerCase()} trend with ${confidenceBand.toLowerCase()} confidence supports a projected profit.`;
+  } else if (trendDirection === 'informational') {
+    summary = `With a ${predictedPriceTrend.toLowerCase()} price trend, this crop is projected to remain profitable based on current costs and yield.`;
+  } else {
+    summary = `Despite a ${predictedPriceTrend.toLowerCase()} trend, this crop is still projected to be profitable based on current costs and yield.`;
+  }
+
+  return { summary, factors, limitations };
+}
+
 // How much expected profit (in rupees) contributes to the within-bucket
 // ranking tie-break, expressed as rank-score points per rupee. At this
 // scale, profit differences of a few thousand rupees shift the ranking by
@@ -101,6 +199,19 @@ export class RecommendationService {
           currentPrice: forecast.currentModalPrice,
           bestSeason: crop.bestSeason,
           growthDuration: crop.growthDuration,
+          confidenceBand: forecast.confidenceBand,
+          probFalling: forecast.probFalling,
+          probRising: forecast.probRising,
+          probStable: forecast.probStable,
+          predictedPrice: Math.round(expectedPrice * 100) / 100,
+          reasoning: buildReasoning({
+            predictedPriceTrend: forecast.predictedPriceTrend,
+            confidence: forecast.confidence,
+            confidenceBand: forecast.confidenceBand,
+            currentModalPrice: forecast.currentModalPrice,
+            expectedPrice,
+            expectedProfit,
+          }),
         });
       }
     }
