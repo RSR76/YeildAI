@@ -31,14 +31,26 @@ async function parseErrorMessage(response: Response): Promise<string> {
  * query params as the second argument. Automatically attaches the stored
  * auth token (if any) so it also works for authenticated GET endpoints.
  */
-export async function apiClient<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
+export interface ApiClientOptions {
+  signal?: AbortSignal;
+}
+
+export async function apiClient<T>(
+  endpoint: string,
+  params?: Record<string, string>,
+  options: ApiClientOptions = {}
+): Promise<T> {
   let url = `${API_BASE_URL}${endpoint}`;
+
   if (params) {
     const query = new URLSearchParams(params).toString();
     url += `?${query}`;
   }
 
-  const response = await fetch(url, { headers: { ...authHeaders() } });
+  const response = await fetch(url, {
+    headers: { ...authHeaders() },
+    signal: options.signal,
+  });
 
   if (!response.ok) {
     throw new Error(await parseErrorMessage(response));
