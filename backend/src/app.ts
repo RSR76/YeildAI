@@ -5,6 +5,9 @@ import { ForecastController } from './controllers/forecast.controller.js';
 import { RecommendationController } from './controllers/recommendation.controller.js';
 import { BrokerController, CropController } from './controllers/misc.controller.js';
 import { GeocodeController } from './controllers/geocode.controller.js';
+import { AuthController } from './controllers/auth.controller.js';
+import { FarmController } from './controllers/farm.controller.js';
+import { requireAuth } from './middleware/auth.middleware.js';
 import { getReadinessState } from './lib/csvForecastIndex.js';
 
 const app = express();
@@ -17,17 +20,26 @@ const recommendationController = new RecommendationController();
 const brokerController = new BrokerController();
 const cropController = new CropController();
 const geocodeController = new GeocodeController();
+const authController = new AuthController();
+const farmController = new FarmController();
 
-/**
- * Gates forecast/recommendation routes on the forecast index readiness
- * state, checked fresh on every request (not just at startup) so traffic
- * never reaches these handlers before initializeForecastIndex() has
- * finished successfully — even if it fails and never recovers.
- */
 function requireForecastIndexReady(req: Request, res: Response, next: NextFunction) {
   if (getReadinessState().status === 'ready') return next();
   res.status(503).json({ error: 'Backend is initializing', retryable: true });
 }
+
+// Auth Routes — independent of the forecast index (Postgres via Prisma),
+// so no readiness gate needed.
+app.post('/api/auth/signup', authController.signup);
+app.post('/api/auth/login', authController.login);
+app.get('/api/auth/me', requireAuth, authController.me);
+
+// Farm Profile Routes (multi-account / workspace switching)
+app.get('/api/farms', requireAuth, farmController.list);
+app.post('/api/farms', requireAuth, farmController.create);
+app.patch('/api/farms/:id', requireAuth, farmController.update);
+app.delete('/api/farms/:id', requireAuth, farmController.remove);
+app.post('/api/farms/:id/activate', requireAuth, farmController.setActive);
 
 // Forecast Routes
 app.get('/api/forecast/latest', requireForecastIndexReady, forecastController.getLatest);
@@ -41,8 +53,7 @@ app.get('/api/forecast/history', requireForecastIndexReady, forecastController.g
 app.get('/api/recommendations', requireForecastIndexReady, recommendationController.getRecommendations);
 app.get('/api/analysis', requireForecastIndexReady, recommendationController.getMarketAnalysis);
 
-// Geocode Routes — gated on the forecast index because matching a resolved
-// place against a supported location requires listAvailableLocations().
+// Geocode Routes
 app.get('/api/geocode/reverse', requireForecastIndexReady, geocodeController.reverseGeocode);
 
 // Misc Routes (static data, independent of the forecast index)
@@ -50,13 +61,10 @@ app.get('/api/brokers', brokerController.getAll);
 app.get('/api/brokers/:id', brokerController.getById);
 app.get('/api/crops', cropController.getAll);
 
-// Health Check — lightweight process liveness only. Does not reflect
-// forecast index readiness; use GET /ready for that.
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Readiness Check — reflects forecast index initialization state.
 app.get('/ready', (req, res) => {
   const state = getReadinessState();
   if (state.status === 'ready') {

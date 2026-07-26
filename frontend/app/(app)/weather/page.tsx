@@ -7,7 +7,9 @@ import { Card } from '@/components/ui/Card';
 import { KPICard } from '@/components/ui/KPICard';
 import { Loading } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
-import { mockWeatherWeek, mockFarmProfile } from '@/lib/mockData';
+import { mockFarmProfile } from '@/lib/mockData';
+import { generateWeatherWeek } from '@/lib/deriveFarmData';
+import { useAuth } from '@/lib/auth/AuthContext';
 import type { WeatherDay } from '@/lib/types';
 
 const conditionIcon = (condition: string) => {
@@ -18,14 +20,21 @@ const conditionIcon = (condition: string) => {
 };
 
 export default function WeatherPage() {
+  const { activeFarm } = useAuth();
   const [data, setData] = useState<WeatherDay[] | null>(null);
+  const location = activeFarm?.location ?? mockFarmProfile.location;
 
   useEffect(() => {
-    // No dedicated backend endpoint yet — sourced from the temporary mock
-    // data layer (lib/mockData.ts) until a weather-provider integration exists.
-    const timer = setTimeout(() => setData(mockWeatherWeek), 200);
+    // No dedicated backend endpoint yet — derived per-farm (seeded by
+    // district + state) via lib/deriveFarmData.ts until a real
+    // weather-provider integration exists. Refetches (recomputes) whenever
+    // the active farm changes, so switching farms actually changes the
+    // forecast shown here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setData(null);
+    const timer = setTimeout(() => setData(generateWeatherWeek(activeFarm)), 200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [activeFarm]);
 
   if (!data) return <PageWrapper title="Weather"><Loading /></PageWrapper>;
 
@@ -34,7 +43,7 @@ export default function WeatherPage() {
 
   return (
     <PageWrapper title="Weather">
-      <p className="text-sm text-stone-500 -mt-4 mb-2">7-day outlook for {mockFarmProfile.location}.</p>
+      <p className="text-sm text-stone-500 -mt-4 mb-2">7-day outlook for {location}.</p>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <KPICard title="Today" value={`${today.high}° / ${today.low}°C`} change={today.condition} />

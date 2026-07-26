@@ -7,18 +7,28 @@ import { Card } from '@/components/ui/Card';
 import { Loading } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { StatusBadge } from '@/components/ui/Badge';
-import { mockSoilSamples, mockFarmProfile } from '@/lib/mockData';
+import { mockFarmProfile } from '@/lib/mockData';
+import { generateSoilSamples } from '@/lib/deriveFarmData';
+import { useAuth } from '@/lib/auth/AuthContext';
 import type { SoilSample } from '@/lib/types';
 
 export default function SoilAnalysisPage() {
+  const { activeFarm } = useAuth();
   const [data, setData] = useState<SoilSample[] | null>(null);
 
+  const farmName = activeFarm?.name ?? mockFarmProfile.name;
+  const soilType = activeFarm?.soilType ?? mockFarmProfile.soilType;
+
   useEffect(() => {
-    // No dedicated backend endpoint yet — sourced from the temporary mock
-    // data layer (lib/mockData.ts) until a soil-testing integration exists.
-    const timer = setTimeout(() => setData(mockSoilSamples), 200);
+    // No dedicated backend endpoint yet — derived per-farm (seeded by farm
+    // id + soil type) via lib/deriveFarmData.ts until a real soil-testing
+    // integration exists. Refetches (recomputes) whenever the active farm
+    // changes, so switching farms actually changes what's shown here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setData(null);
+    const timer = setTimeout(() => setData(generateSoilSamples(activeFarm)), 200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [activeFarm]);
 
   if (!data) return <PageWrapper title="Soil Analysis"><Loading /></PageWrapper>;
 
@@ -27,7 +37,7 @@ export default function SoilAnalysisPage() {
   return (
     <PageWrapper title="Soil Analysis">
       <p className="text-sm text-stone-500 -mt-4 mb-2">
-        Latest soil test results for {mockFarmProfile.name} — {mockFarmProfile.soilType}.
+        Latest soil test results for {farmName} — {soilType}.
       </p>
 
       <Card title="Soil Composition">

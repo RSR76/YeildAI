@@ -2,3 +2,21 @@
 
 # Real forecast lookup data (large, generated offline, never committed)
 /data/
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js
+.next/
+**/.next/
+
+# Environment files
+.env
+.env.local
+**/.env
+**/.env.local
+
+# Large forecast datasets
+backend/forecast_lookup_all_commodities.csv
+backend/forecast_lookup_sample.csv
