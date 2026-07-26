@@ -42,7 +42,11 @@ export class FarmService {
       throw new FarmNotFoundError('Farm not found');
     }
 
-    return prisma.farmProfile.update({ where: { id: farmId }, data: input });
+    const data = Object.fromEntries(
+      Object.entries(input).filter(([, value]) => value !== undefined)
+    ) as Partial<CreateFarmInput>;
+
+    return prisma.farmProfile.update({ where: { id: farmId }, data });
   }
 
   async delete(userId: string, farmId: string) {
