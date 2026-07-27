@@ -286,10 +286,8 @@ function SectionLabel({ eyebrow, title, icon: Icon }: { eyebrow: string; title: 
 export default function Dashboard() {
   const { activeFarm } = useAuth();
 
-console.log('ACTIVE FARM:', activeFarm);
-
-const state = activeFarm?.state ?? DEFAULT_LOCATION.state;
-const district = activeFarm?.district ?? DEFAULT_LOCATION.district;
+  const state = activeFarm?.state ?? DEFAULT_LOCATION.state;
+  const district = activeFarm?.district ?? DEFAULT_LOCATION.district;
 
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [priceHistory, setPriceHistory] = useState<Forecast[]>([]);

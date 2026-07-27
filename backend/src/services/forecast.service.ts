@@ -13,8 +13,8 @@ export class ForecastService {
     return csvForecastIndex.getLatestForecast(commodity, state, district, market);
   }
 
-  async getAllLatestForecasts(commodity?: string) {
-    return csvForecastIndex.getAllLatestForecasts(commodity);
+  async getAllLatestForecasts(commodity?: string, state?: string, district?: string) {
+    return csvForecastIndex.getAllLatestForecasts(commodity, state, district);
   }
 
   async listAvailableCommodities() {
