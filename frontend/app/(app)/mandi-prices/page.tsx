@@ -16,12 +16,26 @@ import { Card } from '@/components/ui/Card';
 import { Loading, ErrorView, EmptyState } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { TrendBadge, ConfidenceBadge } from '@/components/ui/Badge';
-import { getAllLatestForecasts, getForecastHistory, DEFAULT_LOCATION } from '@/lib/dataService';
+import { LocationBar } from '@/components/location/LocationBar';
+import { getAllLatestForecasts, getForecastHistory } from '@/lib/dataService';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useEffectiveLocation } from '@/lib/useEffectiveLocation';
 import type { Forecast } from '@/lib/types';
 
 export default function MandiPricesPage() {
   const { activeFarm } = useAuth();
+  const {
+    effectiveLocation,
+    farmLocationStatus,
+    locations,
+    locationsError,
+    hasOverride,
+    setManualLocation,
+    setMapLocation,
+    resetToFarm,
+  } = useEffectiveLocation(activeFarm);
+  const { state, district } = effectiveLocation;
+
   const [forecasts, setForecasts] = useState<Forecast[] | null>(null);
   const [history, setHistory] = useState<Forecast[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -29,28 +43,50 @@ export default function MandiPricesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const state = activeFarm?.state ?? DEFAULT_LOCATION.state;
-  const district = activeFarm?.district ?? DEFAULT_LOCATION.district;
-
   useEffect(() => {
-    // Note: /forecast/all-latest currently only filters by commodity, not
-    // state/district, so switching farms doesn't yet change which mandi
-    // rows are shown — only the label below. Filtering by farm location
-    // would need a backend change to that endpoint.
-    getAllLatestForecasts()
+    const controller = new AbortController();
+    // Clear stale rows/selection/history immediately so a location change
+    // never briefly shows the previous location's markets under the new
+    // label while the new request is in flight.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    setError(null);
+    setForecasts(null);
+    setSelected(null);
+    setHistory([]);
+    getAllLatestForecasts(undefined, state, district, { signal: controller.signal })
       .then((data) => {
+        if (controller.signal.aborted) return;
         setForecasts(data);
         if (data.length > 0) setSelected(data[0].commodity);
       })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setError(err.message);
+      })
+      .finally(() => {
+        if (controller.signal.aborted) return;
+        setLoading(false);
+      });
+    return () => controller.abort();
+  }, [state, district]);
 
   useEffect(() => {
     if (!selected) return;
     const row = forecasts?.find((f) => f.commodity === selected);
     if (!row) return;
-    getForecastHistory(selected, row.state, row.district, row.market).then(setHistory);
+    const controller = new AbortController();
+    getForecastHistory(selected, row.state, row.district, row.market, { signal: controller.signal })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setHistory(data);
+      })
+      .catch(() => {
+        // History is supplementary to the price table; a failure here
+        // shouldn't block the page, so it's swallowed rather than surfaced
+        // as a page-level error.
+      });
+    return () => controller.abort();
   }, [selected, forecasts]);
 
   const filtered = useMemo(() => {
@@ -68,12 +104,45 @@ export default function MandiPricesPage() {
     [history]
   );
 
-  if (loading) return <PageWrapper title="Mandi Prices"><Loading /></PageWrapper>;
-  if (error) return <PageWrapper title="Mandi Prices"><ErrorView message={error} /></PageWrapper>;
+  const locationBar = (
+    <LocationBar
+      effectiveLocation={effectiveLocation}
+      farmLocationStatus={farmLocationStatus}
+      locations={locations}
+      locationsError={locationsError}
+      hasOverride={hasOverride}
+      hasFarm={!!activeFarm}
+      onManualSelect={setManualLocation}
+      onMapLocationResolved={(result) => {
+        if (result.matchedState && result.matchedDistrict) {
+          setMapLocation(result.matchedState, result.matchedDistrict);
+        }
+      }}
+      onResetToFarm={resetToFarm}
+    />
+  );
+
+  if (loading) {
+    return (
+      <PageWrapper title="Mandi Prices">
+        {locationBar}
+        <Loading />
+      </PageWrapper>
+    );
+  }
+  if (error) {
+    return (
+      <PageWrapper title="Mandi Prices">
+        {locationBar}
+        <ErrorView message={error} />
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper title="Mandi Prices">
-      <p className="text-sm text-stone-500 -mt-4 mb-2">
+      {locationBar}
+      <p className="text-sm text-stone-500 -mt-2 mb-2">
         Showing latest forecasts for {district}, {state}.
       </p>
 
@@ -89,7 +158,13 @@ export default function MandiPricesPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <EmptyState message="No commodities match your search." />
+          <EmptyState
+            message={
+              (forecasts ?? []).length === 0
+                ? `No forecast coverage for ${district}, ${state} yet. Try a different location above.`
+                : 'No commodities match your search.'
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">

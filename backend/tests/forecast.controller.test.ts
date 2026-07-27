@@ -47,6 +47,42 @@ describe('ForecastController.getLatest', () => {
   });
 });
 
+describe('ForecastController.getAllLatest', () => {
+  const controller = new ForecastController();
+
+  it('200s with all markets when no filters are given', async () => {
+    const req: any = { query: {} };
+    const res = mockRes();
+    await controller.getAllLatest(req, res);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ commodity: 'Tomato' })]));
+  });
+
+  it('filters to only the requested state/district', async () => {
+    const req: any = { query: { state: 'Uttar Pradesh', district: 'Barabanki' } };
+    const res = mockRes();
+    await controller.getAllLatest(req, res);
+    const results = res.json.mock.calls[0][0];
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ state: 'Uttar Pradesh', district: 'Barabanki' });
+  });
+
+  it('returns an empty array — never unrelated markets — for an unsupported location', async () => {
+    const req: any = { query: { state: 'Madhya Pradesh', district: 'Test' } };
+    const res = mockRes();
+    await controller.getAllLatest(req, res);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+  it('400s when only one of state/district is given', async () => {
+    const req: any = { query: { state: 'Uttar Pradesh' } };
+    const res = mockRes();
+    await controller.getAllLatest(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
 describe('ForecastController.getLocations', () => {
   const controller = new ForecastController();
 

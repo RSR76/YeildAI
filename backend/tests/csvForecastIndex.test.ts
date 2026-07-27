@@ -68,6 +68,27 @@ describe('getAllLatestForecasts', () => {
     expect(onions).toHaveLength(1);
     expect(onions[0]?.market).toBe('Lasalgaon');
   });
+
+  it('filters by an exact state/district pair', () => {
+    const results = csvForecastIndex.getAllLatestForecasts(undefined, 'Uttar Pradesh', 'Barabanki');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.market).toBe('Barabanki');
+  });
+
+  it('is case- and whitespace-insensitive for the location filter', () => {
+    const results = csvForecastIndex.getAllLatestForecasts(undefined, '  UTTAR pradesh', 'barabanki ');
+    expect(results).toHaveLength(1);
+  });
+
+  it('returns an empty array — never all markets — for a location with no forecast coverage', () => {
+    const results = csvForecastIndex.getAllLatestForecasts(undefined, 'Madhya Pradesh', 'Test');
+    expect(results).toEqual([]);
+  });
+
+  it('combines the commodity and location filters', () => {
+    const results = csvForecastIndex.getAllLatestForecasts('Onion', 'Uttar Pradesh', 'Barabanki');
+    expect(results).toEqual([]);
+  });
 });
 
 describe('listAvailableCommodities', () => {

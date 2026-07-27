@@ -31,8 +31,20 @@ async function withFallback<T>(request: () => Promise<T>, fallback: T): Promise<
     }
 }
 
-export function getAllLatestForecasts(commodity?: string, options?: ApiClientOptions): Promise<Forecast[]> {
-    return apiClient<Forecast[]>('/forecast/all-latest', commodity ? { commodity } : undefined, options);
+export function getAllLatestForecasts(
+    commodity?: string,
+    state?: string,
+    district?: string,
+    options?: ApiClientOptions
+): Promise<Forecast[]> {
+    const params: Record<string, string> = {};
+    if (commodity) params.commodity = commodity;
+    // state/district are an optional pair on the backend — both or neither.
+    if (state && district) {
+        params.state = state;
+        params.district = district;
+    }
+    return apiClient<Forecast[]>('/forecast/all-latest', Object.keys(params).length ? params : undefined, options);
 }
 
 export function getForecastHistory(

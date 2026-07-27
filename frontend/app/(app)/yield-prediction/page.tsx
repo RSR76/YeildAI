@@ -37,6 +37,11 @@ export default function YieldPredictionPage() {
   const location = activeFarm?.location ?? mockFarmProfile.location;
 
   useEffect(() => {
+    // Resetting to null on farm switch is the standard
+    // data-fetching-on-dependency pattern; it shows the loading state
+    // immediately instead of the previous farm's chart lingering during the
+    // simulated 200ms delay below.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setData(null);
 
     const timer = setTimeout(() => {

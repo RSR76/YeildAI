@@ -1,8 +1,14 @@
-import app from './app.js';
-import dotenv from 'dotenv';
-import { initializeForecastIndex } from './lib/csvForecastIndex.js';
+// Must run before any other local import: ES module imports are evaluated
+// in the order they're written, so if this came after `import app from
+// './app.js'`, app.js's transitive import of lib/prisma.ts would construct
+// PrismaClient before DATABASE_URL was loaded into process.env — which is
+// exactly what caused every Prisma-backed request (signup, login, farms) to
+// fail with "Environment variable not found: DATABASE_URL" while env-free
+// routes (forecast CSV lookups) kept working fine.
+import 'dotenv/config';
 
-dotenv.config();
+import app from './app.js';
+import { initializeForecastIndex } from './lib/csvForecastIndex.js';
 
 const PORT = process.env.PORT || 3001;
 

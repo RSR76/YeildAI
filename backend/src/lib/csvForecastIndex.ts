@@ -354,12 +354,31 @@ export function getLatestForecast(commodity: string, state: string, district: st
   return idx.latestByKey.get(key) ?? null;
 }
 
-export function getAllLatestForecasts(commodity?: string): ForecastRecord[] {
+/**
+ * Filters by commodity (optional) and, when both state and district are
+ * given, by an exact (case/whitespace-insensitive) match on that location.
+ * A location filter that matches nothing returns an empty array — it never
+ * silently widens back out to "all markets", which is what previously made
+ * Mandi Prices show unrelated markets under an invalid farm location.
+ */
+export function getAllLatestForecasts(commodity?: string, state?: string, district?: string): ForecastRecord[] {
   const idx = getIndex();
-  const all = Array.from(idx.latestByKey.values());
-  if (!commodity) return all;
-  const target = commodity.trim().toLowerCase();
-  return all.filter((r) => r.commodity.trim().toLowerCase() === target);
+  let results = Array.from(idx.latestByKey.values());
+
+  if (commodity) {
+    const target = commodity.trim().toLowerCase();
+    results = results.filter((r) => r.commodity.trim().toLowerCase() === target);
+  }
+
+  if (state && district) {
+    const targetState = state.trim().toLowerCase();
+    const targetDistrict = district.trim().toLowerCase();
+    results = results.filter(
+      (r) => r.state.trim().toLowerCase() === targetState && r.district.trim().toLowerCase() === targetDistrict
+    );
+  }
+
+  return results;
 }
 
 export function listAvailableCommodities(): string[] {

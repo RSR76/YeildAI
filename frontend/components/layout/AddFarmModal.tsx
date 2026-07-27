@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, X } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth/AuthContext';
+import { getLocations } from '@/lib/dataService';
+import { findSupportedMatch } from '@/lib/location';
+import type { Location } from '@/lib/types';
 
 const SOIL_TYPES = ['Alluvial loam', 'Black cotton soil', 'Red laterite', 'Sandy loam', 'Clay loam'];
 const IRRIGATION_TYPES = ['Canal + tube well', 'Borewell', 'Rainfed', 'Drip irrigation', 'Canal only'];
@@ -20,6 +23,31 @@ export function AddFarmModal({ onClose }: { onClose: () => void }) {
     const [crops, setCrops] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+
+    // Soft, non-blocking coverage check: a farm can be created at any
+    // location, but Recommendations/Mandi Prices only have data for
+    // locations in this list, so it's worth flagging before submit rather
+    // than leaving the user to discover it later on an empty dashboard.
+    const [supportedLocations, setSupportedLocations] = useState<Location[] | null>(null);
+    useEffect(() => {
+        const controller = new AbortController();
+        getLocations({ signal: controller.signal })
+            .then((data) => {
+                if (controller.signal.aborted) return;
+                setSupportedLocations(data);
+            })
+            .catch(() => {
+                // Coverage hint is best-effort; a failed lookup just means no
+                // warning is shown, not a blocked form.
+            });
+        return () => controller.abort();
+    }, []);
+
+    const showCoverageWarning =
+        supportedLocations !== null &&
+        state.trim().length > 0 &&
+        district.trim().length > 0 &&
+        !findSupportedMatch(supportedLocations, state, district);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -104,6 +132,17 @@ export function AddFarmModal({ onClose }: { onClose: () => void }) {
                             />
                         </div>
                     </div>
+
+                    {showCoverageWarning && (
+                        <div className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                No forecast data is available for this location yet. You can still add the farm — Mandi
+                                Prices and Recommendations will show no data until this location is added to the
+                                dataset.
+                            </span>
+                        </div>
+                    )}
 
                     <div>
                         <label className="mb-1 block text-xs font-medium text-stone-600">Size (acres)</label>

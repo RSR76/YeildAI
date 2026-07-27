@@ -30,7 +30,8 @@ export class AuthController {
       if (error instanceof AuthConflictError) {
         return res.status(409).json({ error: error.message });
       }
-      res.status(500).json({ error: (error as Error).message });
+      console.error('signup failed:', error);
+      res.status(500).json({ error: 'Something went wrong. Please try again.' });
     }
   }
 
@@ -47,7 +48,8 @@ export class AuthController {
       if (error instanceof AuthInvalidCredentialsError) {
         return res.status(401).json({ error: error.message });
       }
-      res.status(500).json({ error: (error as Error).message });
+      console.error('login failed:', error);
+      res.status(500).json({ error: 'Something went wrong. Please try again.' });
     }
   }
 
@@ -63,7 +65,8 @@ export class AuthController {
       }
       res.json(user);
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      console.error('fetching current user failed:', error);
+      res.status(500).json({ error: 'Something went wrong. Please try again.' });
     }
   }
 }

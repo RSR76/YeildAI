@@ -168,6 +168,34 @@ export interface ReverseGeocodeResult {
 
 export type LocationMatchStatus = 'idle' | 'loading' | 'success' | 'partial' | 'unsupported' | 'error';
 
+/**
+ * The "effective location" model used by Recommendations and Mandi Prices to
+ * decide which state/district to fetch data for.
+ *
+ * Precedence: an explicit override (map pin or manual dropdown pick) always
+ * wins over the active farm's location, which in turn wins over the
+ * hardcoded DEFAULT_LOCATION (used only when there's no farm at all).
+ */
+export type LocationSource = 'farm' | 'map' | 'manual' | 'default';
+
+export interface EffectiveLocation {
+    state: string;
+    district: string;
+    source: LocationSource;
+    /**
+     * Whether (state, district) is an exact match in the backend's supported
+     * forecast locations list. `null` while that list hasn't loaded yet —
+     * callers should treat `null` as "unknown", not as unsupported.
+     */
+    isSupported: boolean | null;
+}
+
+/**
+ * Status of the active farm's own location, independent of any override.
+ * Drives the warning/status copy in LocationBar.
+ */
+export type FarmLocationStatus = 'no-farm' | 'missing' | 'unknown' | 'supported' | 'unsupported';
+
 export interface WeatherDay {
     day: string;
     date: string;

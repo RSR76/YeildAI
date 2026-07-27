@@ -18,6 +18,20 @@ const optionalCommodityQuerySchema = z.object({
   commodity: nonEmpty.optional(),
 });
 
+// state/district on /forecast/all-latest are an optional *pair*: passing
+// only one would be ambiguous (which district in which state?), so both or
+// neither is enforced here rather than silently ignoring a lone param.
+const allLatestQuerySchema = z
+  .object({
+    commodity: nonEmpty.optional(),
+    state: nonEmpty.optional(),
+    district: nonEmpty.optional(),
+  })
+  .refine((v) => (v.state == null) === (v.district == null), {
+    message: 'state and district must be provided together',
+    path: ['district'],
+  });
+
 function formatIssues(error: z.ZodError) {
   return error.issues.map((issue) => `${issue.path.join('.') || 'query'}: ${issue.message}`);
 }
@@ -47,13 +61,14 @@ export class ForecastController {
   }
 
   async getAllLatest(req: Request, res: Response) {
-    const parsed = optionalCommodityQuerySchema.safeParse(req.query);
+    const parsed = allLatestQuerySchema.safeParse(req.query);
     if (!parsed.success) {
       return res.status(400).json({ error: 'Invalid query parameters', details: formatIssues(parsed.error) });
     }
 
     try {
-      const results = await forecastService.getAllLatestForecasts(parsed.data.commodity);
+      const { commodity, state, district } = parsed.data;
+      const results = await forecastService.getAllLatestForecasts(commodity, state, district);
       res.json(results);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
