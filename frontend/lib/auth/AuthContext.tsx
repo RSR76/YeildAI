@@ -19,6 +19,8 @@ interface AuthContextValue {
     logout: () => void;
     switchFarm: (farmId: string) => Promise<void>;
     addFarm: (input: CreateFarmInput) => Promise<FarmProfile>;
+    editFarm: (farmId: string, input: Partial<CreateFarmInput>) => Promise<FarmProfile>;
+    removeFarm: (farmId: string) => Promise<void>;
     refreshFarms: () => Promise<void>;
 }
 
@@ -94,6 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return farm;
     }, [refreshFarms]);
 
+    const editFarm = useCallback(async (farmId: string, input: Partial<CreateFarmInput>) => {
+        const farm = await authClient.updateFarm(farmId, input);
+        setFarms((prev) => prev.map((f) => (f.id === farmId ? farm : f)));
+        return farm;
+    }, []);
+
+    const removeFarm = useCallback(async (farmId: string) => {
+        await authClient.deleteFarm(farmId);
+        await refreshFarms();
+    }, [refreshFarms]);
+
     const activeFarm = useMemo(() => farms.find((f) => f.isDefault) ?? farms[0] ?? null, [farms]);
 
     const value: AuthContextValue = {
@@ -107,6 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         switchFarm,
         addFarm,
+        editFarm,
+        removeFarm,
         refreshFarms,
     };
 

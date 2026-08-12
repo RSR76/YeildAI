@@ -8,6 +8,9 @@ const farmService = new FarmService();
 const createFarmSchema = z.object({
   name: z.string().trim().min(1, 'Farm name is required'),
   location: z.string().trim().min(1, 'Location is required'),
+  address: z.string().trim().min(1).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   state: z.string().trim().min(1, 'State is required'),
   district: z.string().trim().min(1, 'District is required'),
   sizeAcres: z.number().positive('Size must be greater than 0'),

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, Ruler, Droplet, Layers, Plus } from 'lucide-react';
+import { MapPin, Ruler, Droplet, Layers, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
 import { PageWrapper } from '@/components/layout/PageWrapper';
@@ -9,8 +9,25 @@ import { AddFarmModal } from '@/components/layout/AddFarmModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 export default function FarmDetailsPage() {
-  const { activeFarm } = useAuth();
+  const { activeFarm, removeFarm } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    if (!activeFarm) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await removeFarm(activeFarm.id);
+      setConfirmingDelete(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete this farm. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (!activeFarm) {
     return (
@@ -33,7 +50,7 @@ export default function FarmDetailsPage() {
   }
 
   const stats = [
-    { icon: MapPin, label: 'Location', value: activeFarm.location },
+    { icon: MapPin, label: 'Location', value: activeFarm.address || activeFarm.location },
     { icon: Ruler, label: 'Size', value: `${activeFarm.sizeAcres} acres` },
     { icon: Layers, label: 'Soil Type', value: activeFarm.soilType },
     { icon: Droplet, label: 'Irrigation', value: activeFarm.irrigation },
@@ -42,7 +59,16 @@ export default function FarmDetailsPage() {
   return (
     <PageWrapper title="Farm Details">
       <Card title="Farm Profile">
-        <h4 className="mb-4 text-xl font-semibold text-stone-900">{activeFarm.name}</h4>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <h4 className="text-xl font-semibold text-stone-900">{activeFarm.name}</h4>
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete farm
+          </button>
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {stats.map((s) => (
             <div key={s.label} className="flex items-start gap-3">
@@ -72,6 +98,47 @@ export default function FarmDetailsPage() {
           </div>
         )}
       </Card>
+
+      {confirmingDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => !deleting && setConfirmingDelete(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              <h3 className="font-[var(--font-display)] text-lg text-stone-900">Delete {activeFarm.name}?</h3>
+            </div>
+            <p className="mb-4 text-sm text-stone-600">
+              This permanently removes this farm and its saved details. This can&apos;t be undone.
+            </p>
+            {error && (
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {error}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="flex-1 rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageWrapper>
   );
 }

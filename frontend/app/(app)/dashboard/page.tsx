@@ -9,13 +9,13 @@ import {
 import {
   Sprout, Wheat, Leaf, TrendingUp, CloudRain, AlertTriangle,
   ShieldCheck, ArrowUpRight, ArrowDownRight,
-  Info, Landmark, Truck, Gauge, Sparkles,
+  Info, Landmark, Truck, Gauge, Sparkles, MapPin, PlusCircle,
 } from "lucide-react";
 
 import './dashboard.css';
 import { Loading, ErrorView } from '@/components/ui/States';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getRecommendations, getForecastHistory, DEFAULT_LOCATION } from '@/lib/dataService';
+import { getRecommendations, getForecastHistory } from '@/lib/dataService';
 import type { Recommendation, Forecast } from '@/lib/types';
 
 /* ------------------------------------------------------------------ */
@@ -279,6 +279,49 @@ function SectionLabel({ eyebrow, title, icon: Icon }: { eyebrow: string; title: 
   );
 }
 
+/* No-farm empty state — shown until the user has added and selected a farm */
+function NoFarmState() {
+  return (
+    <div className="dash-root">
+      <div className="main-col">
+        <GlassCard className="hero" style={{ textAlign: "center", padding: "48px 32px" }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: "var(--sage-100)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 18px",
+            }}
+          >
+            <MapPin size={26} color="var(--forest-600)" />
+          </div>
+          <h1 className="hero-title" style={{ fontSize: 22 }}>Add a farm to see your dashboard</h1>
+          <p className="hero-desc" style={{ maxWidth: 440, margin: "10px auto 22px" }}>
+            Recommendations, price forecasts, and risk analysis are generated for a specific
+            farm location. Add your first farm to get started.
+          </p>
+          <button
+            type="button"
+            className="hero-cta"
+            style={{ display: "inline-flex", cursor: "pointer", border: "none" }}
+            onClick={() => {
+              // Hook this up to whatever opens the "add farm" flow in this app,
+              // e.g. router.push('/farms/new') or an "add farm" modal trigger.
+              window.dispatchEvent(new CustomEvent('open-add-farm'));
+            }}
+          >
+            <PlusCircle size={14} /> Add your first farm
+          </button>
+        </GlassCard>
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* MAIN DASHBOARD                                                      */
 /* ------------------------------------------------------------------ */
@@ -286,8 +329,11 @@ function SectionLabel({ eyebrow, title, icon: Icon }: { eyebrow: string; title: 
 export default function Dashboard() {
   const { activeFarm } = useAuth();
 
-  const state = activeFarm?.state ?? DEFAULT_LOCATION.state;
-  const district = activeFarm?.district ?? DEFAULT_LOCATION.district;
+  // No fallback to a default location anymore — state/district are only
+  // defined once a real farm is active, so nothing fetches or renders
+  // until then.
+  const state = activeFarm?.state;
+  const district = activeFarm?.district;
 
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [priceHistory, setPriceHistory] = useState<Forecast[]>([]);
@@ -296,8 +342,17 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   // Refetch whenever the active farm (and therefore state/district) changes
-  // — this is what makes the dashboard respond to switching farms.
+  // — this is what makes the dashboard respond to switching farms. If there
+  // is no active farm yet, skip fetching entirely.
   useEffect(() => {
+    if (!state || !district) {
+      setRecommendations(null);
+      setSelectedCrop(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     getRecommendations(state, district)
@@ -310,14 +365,17 @@ export default function Dashboard() {
   }, [state, district]);
 
   const crops = useMemo(() => toDashCrops(recommendations ?? []), [recommendations]);
-  
+
   const top = crops.find((c) => c.id === selectedCrop) ?? crops[0];
   const worst = crops[crops.length - 1];
 
   // Pull a real price history for the top-ranked commodity so the forecast
   // chart is tied to the active farm's actual top pick, not a fixed mock.
   useEffect(() => {
-    if (!top) return;
+    if (!top || !state || !district) {
+      setPriceHistory([]);
+      return;
+    }
     // No market name is available from Recommendation data directly; the
     // district's primary mandi conventionally shares its name in this
     // dataset (see mock data), so it's used as a reasonable default.
@@ -344,6 +402,12 @@ export default function Dashboard() {
         [worst.name]: riskLevelToScore(worst.risk[ax.key]),
       }))
     : [];
+
+  // Nothing to show until a farm exists — render the empty state and stop
+  // before touching any farm-scoped data below.
+  if (!activeFarm || !state || !district) {
+    return <NoFarmState />;
+  }
 
   if (loading) {
     return (

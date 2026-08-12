@@ -10,11 +10,11 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { Gauge, Sprout } from 'lucide-react';
+import { Gauge, MapPin, PlusCircle, Sprout } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
 import { KPICard } from '@/components/ui/KPICard';
-import { Loading } from '@/components/ui/States';
+import { Loading, ErrorView } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 
 import {
@@ -25,51 +25,128 @@ import {
 } from '@/lib/deriveFarmData';
 
 import { useAuth } from '@/lib/auth/AuthContext';
-import { mockFarmProfile } from '@/lib/mockData';
 import type { YieldPoint } from '@/lib/types';
+
+function NoFarmState() {
+  return (
+    <PageWrapper title="Yield Prediction">
+      <Card title='Yeild Prediction'>
+        <div className="py-14 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+            <MapPin className="h-8 w-8 text-emerald-600" />
+          </div>
+
+          <h2 className="text-xl font-semibold text-stone-800">
+            Add a farm to see yield prediction
+          </h2>
+
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-stone-500">
+            Yield predictions are generated for a specific farm using
+            its location, crop profile, soil conditions, and seasonal
+            information. Add a farm to get started.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-add-farm'));
+            }}
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-800"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Add your first farm
+          </button>
+        </div>
+      </Card>
+    </PageWrapper>
+  );
+}
 
 export default function YieldPredictionPage() {
   const { activeFarm } = useAuth();
 
   const [data, setData] = useState<YieldPoint[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const farmName = activeFarm?.name ?? mockFarmProfile.name;
-  const location = activeFarm?.location ?? mockFarmProfile.location;
+  /*
+   * Do not use mockFarmProfile as a fallback.
+   * Yield prediction must only exist for a real active farm.
+   */
+  const farmName = activeFarm?.name;
+  const location = activeFarm?.location;
 
   useEffect(() => {
-    // Resetting to null on farm switch is the standard
-    // data-fetching-on-dependency pattern; it shows the loading state
-    // immediately instead of the previous farm's chart lingering during the
-    // simulated 200ms delay below.
+    /*
+     * If there is no active farm, clear any previous farm's data
+     * and do not generate a prediction.
+     */
+    if (!activeFarm) {
+      setData(null);
+      setError(null);
+      return;
+    }
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setData(null);
+    setError(null);
 
     const timer = setTimeout(() => {
-      setData(generateYieldTrend(activeFarm));
+      try {
+        const trend = generateYieldTrend(activeFarm);
+        setData(trend);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to generate yield prediction.'
+        );
+      }
     }, 200);
 
     return () => clearTimeout(timer);
   }, [activeFarm]);
 
+  /*
+   * These calculations are also farm-dependent.
+   * They are only used after the active-farm check below.
+   */
   const confidence = useMemo(
-    () => generateYieldConfidence(activeFarm),
+    () => (activeFarm ? generateYieldConfidence(activeFarm) : 0),
     [activeFarm]
   );
 
   const soil = useMemo(
-    () => generateSoilSamples(activeFarm),
+    () => (activeFarm ? generateSoilSamples(activeFarm) : []),
     [activeFarm]
   );
 
   const weather = useMemo(
-    () => generateWeatherWeek(activeFarm),
+    () => (activeFarm ? generateWeatherWeek(activeFarm) : []),
     [activeFarm]
   );
+
+  /*
+   * No farm = no yield prediction.
+   *
+   * This is intentionally before the loading state so a user who
+   * has never added a farm does not see a loading spinner forever.
+   */
+  if (!activeFarm) {
+    return <NoFarmState />;
+  }
 
   if (!data) {
     return (
       <PageWrapper title="Yield Prediction">
         <Loading />
+      </PageWrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageWrapper title="Yield Prediction">
+        <ErrorView message={error} />
       </PageWrapper>
     );
   }
@@ -110,11 +187,15 @@ export default function YieldPredictionPage() {
   const weatherSummary =
     rainyDays >= 3
       ? `The current illustrative outlook shows ${rainyDays} higher-rainfall days this week.`
-      : `The current illustrative outlook shows mostly dry conditions, with ${rainyDays} higher-rainfall day${rainyDays === 1 ? '' : 's'} this week.`;
+      : `The current illustrative outlook shows mostly dry conditions, with ${rainyDays} higher-rainfall day${
+          rainyDays === 1 ? '' : 's'
+        } this week.`;
 
   const cropSummary =
-    activeFarm?.crops?.length
-      ? `The prediction is adjusted for the farm's current crop profile: ${activeFarm.crops.join(', ')}.`
+    activeFarm.crops?.length
+      ? `The prediction is adjusted for the farm's current crop profile: ${activeFarm.crops.join(
+          ', '
+        )}.`
       : 'No crop profile is currently available for this farm.';
 
   const chartValues = data.flatMap((point) =>
@@ -123,8 +204,13 @@ export default function YieldPredictionPage() {
     )
   );
 
-  const minYield = Math.min(...chartValues);
-  const maxYield = Math.max(...chartValues);
+  const minYield = chartValues.length
+    ? Math.min(...chartValues)
+    : 0;
+
+  const maxYield = chartValues.length
+    ? Math.max(...chartValues)
+    : 10;
 
   const yMin = Math.max(0, Math.floor(minYield - 5));
   const yMax = Math.ceil(maxYield + 5);
@@ -255,13 +341,11 @@ export default function YieldPredictionPage() {
             <p>{weatherSummary}</p>
             <p>{cropSummary}</p>
 
-            {activeFarm && (
-              <p>
-                The farm profile also includes {activeFarm.sizeAcres} acres,
-                {` ${activeFarm.soilType}`} soil and
-                {` ${activeFarm.irrigation}`} irrigation.
-              </p>
-            )}
+            <p>
+              The farm profile also includes {activeFarm.sizeAcres} acres,
+              {` ${activeFarm.soilType}`} soil and
+              {` ${activeFarm.irrigation}`} irrigation.
+            </p>
           </div>
         </div>
       </Card>

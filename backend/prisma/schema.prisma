@@ -25,6 +25,9 @@ model FarmProfile {
 
   name        String
   location    String
+  address     String?
+  latitude    Float?
+  longitude   Float?
   state       String
   district    String
   sizeAcres   Float

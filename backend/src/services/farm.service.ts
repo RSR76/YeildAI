@@ -3,6 +3,9 @@ import prisma from '../lib/prisma.js';
 export interface CreateFarmInput {
   name: string;
   location: string;
+  address?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
   state: string;
   district: string;
   sizeAcres: number;
