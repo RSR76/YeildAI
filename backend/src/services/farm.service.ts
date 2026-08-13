@@ -4,6 +4,7 @@ export interface CreateFarmInput {
   name: string;
   location: string;
   address?: string | undefined;
+  pincode: string;
   latitude?: number | undefined;
   longitude?: number | undefined;
   state: string;
@@ -14,7 +15,9 @@ export interface CreateFarmInput {
   irrigation: string;
 }
 
-export type UpdateFarmInput = { [K in keyof CreateFarmInput]?: CreateFarmInput[K] | undefined };
+export type UpdateFarmInput = {
+  [K in keyof CreateFarmInput]?: CreateFarmInput[K] | undefined;
+};
 
 export class FarmNotFoundError extends Error {}
 
@@ -27,38 +30,77 @@ export class FarmService {
   }
 
   async create(userId: string, input: CreateFarmInput) {
-    const existingCount = await prisma.farmProfile.count({ where: { userId } });
+    const existingCount = await prisma.farmProfile.count({
+      where: { userId },
+    });
 
     return prisma.farmProfile.create({
       data: {
-        ...input,
+        name: input.name,
+        location: input.location,
+        pincode: input.pincode,
+        state: input.state,
+        district: input.district,
+        sizeAcres: input.sizeAcres,
+        soilType: input.soilType,
+        crops: input.crops,
+        irrigation: input.irrigation,
         userId,
-        // The user's very first farm becomes their default/active one.
+
+        ...(input.address !== undefined
+          ? { address: input.address }
+          : {}),
+
+        ...(input.latitude !== undefined
+          ? { latitude: input.latitude }
+          : {}),
+
+        ...(input.longitude !== undefined
+          ? { longitude: input.longitude }
+          : {}),
+
         isDefault: existingCount === 0,
       },
     });
   }
 
-  async update(userId: string, farmId: string, input: UpdateFarmInput) {
-    const farm = await prisma.farmProfile.findFirst({ where: { id: farmId, userId } });
+  async update(
+    userId: string,
+    farmId: string,
+    input: UpdateFarmInput
+  ) {
+    const farm = await prisma.farmProfile.findFirst({
+      where: { id: farmId, userId },
+    });
+
     if (!farm) {
       throw new FarmNotFoundError('Farm not found');
     }
 
     const data = Object.fromEntries(
-      Object.entries(input).filter(([, value]) => value !== undefined)
-    ) as Partial<CreateFarmInput>;
+      Object.entries(input).filter(
+        ([, value]) => value !== undefined
+      )
+    );
 
-    return prisma.farmProfile.update({ where: { id: farmId }, data });
+    return prisma.farmProfile.update({
+      where: { id: farmId },
+      data,
+    });
   }
 
   async delete(userId: string, farmId: string) {
-    const farm = await prisma.farmProfile.findFirst({ where: { id: farmId, userId } });
+    const farm = await prisma.farmProfile.findFirst({
+      where: { id: farmId, userId },
+    });
+
     if (!farm) {
       throw new FarmNotFoundError('Farm not found');
     }
 
-    await prisma.farmProfile.delete({ where: { id: farmId } });
+    await prisma.farmProfile.delete({
+      where: { id: farmId },
+    });
 
     // If the deleted farm was the active one, promote another farm (if any)
     // so the user always has an active workspace.
@@ -67,24 +109,40 @@ export class FarmService {
         where: { userId },
         orderBy: { createdAt: 'asc' },
       });
+
       if (next) {
-        await prisma.farmProfile.update({ where: { id: next.id }, data: { isDefault: true } });
+        await prisma.farmProfile.update({
+          where: { id: next.id },
+          data: { isDefault: true },
+        });
       }
     }
   }
 
   /** Marks `farmId` as the user's active/default farm (workspace switch). */
   async setActive(userId: string, farmId: string) {
-    const farm = await prisma.farmProfile.findFirst({ where: { id: farmId, userId } });
+    const farm = await prisma.farmProfile.findFirst({
+      where: { id: farmId, userId },
+    });
+
     if (!farm) {
       throw new FarmNotFoundError('Farm not found');
     }
 
     await prisma.$transaction([
-      prisma.farmProfile.updateMany({ where: { userId }, data: { isDefault: false } }),
-      prisma.farmProfile.update({ where: { id: farmId }, data: { isDefault: true } }),
+      prisma.farmProfile.updateMany({
+        where: { userId },
+        data: { isDefault: false },
+      }),
+
+      prisma.farmProfile.update({
+        where: { id: farmId },
+        data: { isDefault: true },
+      }),
     ]);
 
-    return prisma.farmProfile.findUnique({ where: { id: farmId } });
+    return prisma.farmProfile.findUnique({
+      where: { id: farmId },
+    });
   }
 }

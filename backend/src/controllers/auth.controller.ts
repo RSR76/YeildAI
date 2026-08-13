@@ -5,10 +5,18 @@ import type { AuthenticatedRequest } from '../middleware/auth.middleware.js';
 
 const authService = new AuthService();
 
+// Persona chosen at signup, fixed on the account from then on. GUEST is
+// deliberately not a value here — guest access is unauthenticated (no
+// account, no signup), handled entirely on the frontend/public endpoints.
+const roleSchema = z.enum(['ADMIN', 'FARMER'], {
+  message: 'Choose a persona: Admin or Farmer',
+});
+
 const signupSchema = z.object({
   email: z.string().trim().email('A valid email is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().trim().min(1, 'Name is required'),
+  role: roleSchema,
 });
 
 const loginSchema = z.object({

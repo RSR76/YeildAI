@@ -1,7 +1,7 @@
 import { apiRequest } from '@/lib/api';
-import type { AuthResponse, AuthUser, FarmProfile, CreateFarmInput } from './types.ts';
+import type { AuthResponse, AuthUser, FarmProfile, CreateFarmInput, Role } from './types.ts';
 
-export function signup(input: { email: string; password: string; name: string }): Promise<AuthResponse> {
+export function signup(input: { email: string; password: string; name: string; role: Role }): Promise<AuthResponse> {
     return apiRequest<AuthResponse>('/auth/signup', { method: 'POST', body: input, auth: false });
 }
 

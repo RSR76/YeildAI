@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma.js';
 import { signAuthToken } from '../lib/jwt.js';
+import type { Role } from '@prisma/client';
 
 const SALT_ROUNDS = 10;
 
@@ -11,6 +12,10 @@ export interface SignupInput {
   email: string;
   password: string;
   name: string;
+  // Persona chosen at signup. Fixed on the account from then on — there is
+  // no "switch persona" flow; an admin who wants to also farm creates a
+  // second, separate account, same as any other two-role real-world split.
+  role: Role;
 }
 
 export interface LoginInput {
@@ -18,12 +23,12 @@ export interface LoginInput {
   password: string;
 }
 
-function toPublicUser(user: { id: string; email: string; name: string; createdAt: Date }) {
-  return { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt };
+function toPublicUser(user: { id: string; email: string; name: string; role: Role; createdAt: Date }) {
+  return { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt };
 }
 
 export class AuthService {
-  async signup({ email, password, name }: SignupInput) {
+  async signup({ email, password, name, role }: SignupInput) {
     const normalizedEmail = email.trim().toLowerCase();
 
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -33,10 +38,10 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     const user = await prisma.user.create({
-      data: { email: normalizedEmail, passwordHash, name: name.trim() },
+      data: { email: normalizedEmail, passwordHash, name: name.trim(), role },
     });
 
-    const token = signAuthToken({ userId: user.id, email: user.email });
+    const token = signAuthToken({ userId: user.id, email: user.email, role: user.role });
     return { token, user: toPublicUser(user) };
   }
 
@@ -53,7 +58,7 @@ export class AuthService {
       throw new AuthInvalidCredentialsError('Invalid email or password');
     }
 
-    const token = signAuthToken({ userId: user.id, email: user.email });
+    const token = signAuthToken({ userId: user.id, email: user.email, role: user.role });
     return { token, user: toPublicUser(user) };
   }
 

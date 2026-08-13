@@ -125,6 +125,46 @@ export interface FarmProfile {
     irrigation: string;
 }
 
+/**
+ * One row per (state, district) that has at least one registered farm —
+ * what the Admin persona's country-wide landing map is built from.
+ * Mirrors AdminService.listRegions() on the backend.
+ */
+export interface AdminRegionSummary {
+    state: string;
+    district: string;
+    farmCount: number;
+    totalAcres: number;
+    latitude: number | null;
+    longitude: number | null;
+    topCrops: string[];
+}
+
+/** A farm as seen by an Admin drilling into a district — includes the owning farmer's identity. */
+export interface AdminFarmView {
+    id: string;
+    name: string;
+    location: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    state: string;
+    district: string;
+    sizeAcres: number;
+    soilType: string;
+    crops: string[];
+    irrigation: string;
+    createdAt: string;
+    user: { id: string; name: string; email: string };
+}
+
+export interface AdminDistrictDetail {
+    state: string;
+    district: string;
+    farms: AdminFarmView[];
+    recommendations: Recommendation[];
+}
+
 export interface SoilSample {
     parameter: string;
     value: number;

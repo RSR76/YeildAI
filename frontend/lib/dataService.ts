@@ -12,8 +12,8 @@
  * data.
  */
 
-import { apiClient, type ApiClientOptions } from './api';
-import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption, ReverseGeocodeResult } from './types';
+import { apiClient, apiRequest, type ApiClientOptions } from './api';
+import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption, ReverseGeocodeResult, AdminRegionSummary, AdminDistrictDetail } from './types';
 import {
     DEFAULT_LOCATION,
     mockMarketAnalysis,
@@ -86,6 +86,24 @@ export function getRecommendations(
  */
 export function reverseGeocode(latitude: number, longitude: number, options?: ApiClientOptions): Promise<ReverseGeocodeResult> {
     return apiClient<ReverseGeocodeResult>('/geocode/reverse', { lat: String(latitude), lon: String(longitude) }, options);
+}
+
+/**
+ * Admin-only. Country-wide (state, district) summary for the landing map.
+ * Requires an ADMIN session — apiRequest is expected to attach the stored
+ * auth token automatically (same as every other authClient.ts call), so
+ * nothing extra is passed here.
+ */
+export function getAdminRegions(): Promise<AdminRegionSummary[]> {
+    return apiRequest<AdminRegionSummary[]>('/admin/regions', { method: 'GET' });
+}
+
+/** Admin-only. Every registered farm in one district plus that district's recommendations + reasoning. */
+export function getAdminDistrict(state: string, district: string): Promise<AdminDistrictDetail> {
+    return apiRequest<AdminDistrictDetail>(
+        `/admin/regions/${encodeURIComponent(state)}/${encodeURIComponent(district)}`,
+        { method: 'GET' }
+    );
 }
 
 export function getMarketAnalysis(commodity: string, state: string): Promise<MarketAnalysis> {

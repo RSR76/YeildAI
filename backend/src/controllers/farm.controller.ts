@@ -9,6 +9,11 @@ const createFarmSchema = z.object({
   name: z.string().trim().min(1, 'Farm name is required'),
   location: z.string().trim().min(1, 'Location is required'),
   address: z.string().trim().min(1).optional(),
+  // Mandatory "for the optics" per the product ask — area/state/pincode are
+  // the fields that make a farm registration look complete/official; a
+  // loose 3–10 char check covers PIN-style and alphanumeric postal codes
+  // without hardcoding to one country's format.
+  pincode: z.string().trim().min(3, 'Pincode/ZIP is required').max(10),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   state: z.string().trim().min(1, 'State is required'),

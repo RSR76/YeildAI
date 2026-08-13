@@ -9,7 +9,7 @@ import { AddFarmModal } from '@/components/layout/AddFarmModal';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 export default function FarmDetailsPage() {
-  const { activeFarm, removeFarm } = useAuth();
+  const { activeFarm, removeFarm, isGuest } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -38,13 +38,17 @@ export default function FarmDetailsPage() {
           </p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-900"
+            disabled={isGuest}
+            className="flex items-center gap-2 rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
             Add a farm
           </button>
+          {isGuest && (
+            <p className="mt-2 text-xs text-amber-700">Sign up to add and save your own farms.</p>
+          )}
         </Card>
-        {showAddModal && <AddFarmModal onClose={() => setShowAddModal(false)} />}
+        {showAddModal && !isGuest && <AddFarmModal onClose={() => setShowAddModal(false)} />}
       </PageWrapper>
     );
   }
@@ -54,6 +58,7 @@ export default function FarmDetailsPage() {
     { icon: Ruler, label: 'Size', value: `${activeFarm.sizeAcres} acres` },
     { icon: Layers, label: 'Soil Type', value: activeFarm.soilType },
     { icon: Droplet, label: 'Irrigation', value: activeFarm.irrigation },
+    ...(activeFarm.pincode ? [{ icon: MapPin, label: 'Pincode', value: activeFarm.pincode }] : []),
   ];
 
   return (
@@ -61,13 +66,15 @@ export default function FarmDetailsPage() {
       <Card title="Farm Profile">
         <div className="mb-4 flex items-start justify-between gap-3">
           <h4 className="text-xl font-semibold text-stone-900">{activeFarm.name}</h4>
-          <button
-            onClick={() => setConfirmingDelete(true)}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete farm
-          </button>
+          {!isGuest && (
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete farm
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {stats.map((s) => (

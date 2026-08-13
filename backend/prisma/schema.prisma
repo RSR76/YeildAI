@@ -7,87 +7,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  FARMER
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
   name         String
+  role         Role     @default(FARMER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  farms        FarmProfile[]
+  farms FarmProfile[]
 }
 
 model FarmProfile {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  name        String
-  location    String
-  address     String?
-  latitude    Float?
-  longitude   Float?
-  state       String
-  district    String
-  sizeAcres   Float
-  soilType    String
-  crops       String[]
-  irrigation  String
-  isDefault   Boolean  @default(false)
+  name       String
+  location   String
+  address    String?
+  pincode    String?
+  latitude   Float?
+  longitude  Float?
+  state      String
+  district   String
+  sizeAcres  Float
+  soilType   String
+  crops      String[]
+  irrigation String
+  isDefault  Boolean  @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
 
 model Forecast {
-  id                   String   @id @default(uuid())
-  commodity            String
-  state                String
-  district             String
-  market               String
-  date                 DateTime
-  currentModalPrice    Float
-  predictedPriceTrend  String
-  confidence           Float
-  confidenceBand       String
-  priceTrendScore      Float
-  probFalling          Float
-  probRising           Float
-  probStable           Float
+  id                  String   @id @default(uuid())
+  commodity           String
+  state               String
+  district            String
+  market              String
+  date                DateTime
+  currentModalPrice   Float
+  predictedPriceTrend String
+  confidence          Float
+  confidenceBand      String
+  priceTrendScore     Float
+  probFalling         Float
+  probRising          Float
+  probStable          Float
 
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([commodity, state, district, market])
   @@index([date])
 }
 
 model Crop {
-  id                String   @id @default(uuid())
-  name              String   @unique
+  id                String  @id @default(uuid())
+  name              String  @unique
   category          String?
-  typicalYield      Float?   // quintals per acre
-  costOfCultivation Float?   // per acre
-  growthDuration    Int?     // days
+  typicalYield      Float? // quintals per acre
+  costOfCultivation Float? // per acre
+  growthDuration    Int? // days
   bestSeason        String?
-  
-  recommendations   Recommendation[]
+
+  recommendations Recommendation[]
 }
 
 model Recommendation {
-  id               String   @id @default(uuid())
-  cropId           String
-  crop             Crop     @relation(fields: [cropId], references: [id])
-  state            String
-  district         String
-  score            Float
-  expectedProfit   Float
-  confidenceScore  Float
-  reasoning        String?
-  createdAt        DateTime @default(now())
+  id              String   @id @default(uuid())
+  cropId          String
+  crop            Crop     @relation(fields: [cropId], references: [id])
+  state           String
+  district        String
+  score           Float
+  expectedProfit  Float
+  confidenceScore Float
+  reasoning       String?
+  createdAt       DateTime @default(now())
 
   @@index([state, district])
 }
@@ -112,10 +119,10 @@ model Report {
 }
 
 model UserSettings {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  location  String?
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  location             String?
   preferredCommodities String[]
-  notifications Boolean @default(true)
-  theme      String @default("light")
+  notifications        Boolean  @default(true)
+  theme                String   @default("light")
 }

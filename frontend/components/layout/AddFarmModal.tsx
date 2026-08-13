@@ -22,12 +22,15 @@ const LocationMap = dynamic(() => import('@/components/map/LocationMap'), {
 const INDIA_CENTER: [number, number] = [22.9734, 78.6569];
 const INDIA_ZOOM = 5;
 
-type FieldName = 'name' | 'sizeAcres';
+type FieldName = 'name' | 'sizeAcres' | 'pincode';
 
 /** Required-field validation for the plain text fields. Location is
  * validated separately (see `locationError` below) since it isn't a text
  * input — it's only satisfied once a pin has been resolved on the map. */
-function validateField(field: FieldName, values: { name: string; sizeAcres: string }): string | null {
+function validateField(
+  field: FieldName,
+  values: { name: string; sizeAcres: string; pincode: string }
+): string | null {
   switch (field) {
     case 'name':
       return values.name.trim() ? null : 'Farm name is required';
@@ -36,6 +39,8 @@ function validateField(field: FieldName, values: { name: string; sizeAcres: stri
       const n = Number(values.sizeAcres);
       return n > 0 ? null : 'Enter a size greater than 0';
     }
+    case 'pincode':
+      return values.pincode.trim().length >= 3 ? null : 'Pincode/ZIP is required';
     default:
       return null;
   }
@@ -71,6 +76,7 @@ export function AddFarmModal({ onClose }: { onClose: () => void }) {
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
   const [sizeAcres, setSizeAcres] = useState('');
   const [crops, setCrops] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -81,12 +87,13 @@ export function AddFarmModal({ onClose }: { onClose: () => void }) {
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const fieldErrors = useMemo(() => {
-    const fieldValues = { name, sizeAcres };
+    const fieldValues = { name, sizeAcres, pincode };
     return {
       name: validateField('name', fieldValues),
       sizeAcres: validateField('sizeAcres', fieldValues),
+      pincode: validateField('pincode', fieldValues),
     };
-  }, [name, sizeAcres]);
+  }, [name, sizeAcres, pincode]);
 
   function markTouched(field: FieldName) {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -178,6 +185,7 @@ export function AddFarmModal({ onClose }: { onClose: () => void }) {
         name: name.trim(),
         location: `${resolvedDistrict}, ${resolvedState}`,
         address: address.trim() || undefined,
+        pincode: pincode.trim(),
         latitude: pin?.latitude,
         longitude: pin?.longitude,
         state: resolvedState,
@@ -335,6 +343,20 @@ export function AddFarmModal({ onClose }: { onClose: () => void }) {
                 aria-invalid={!!shownError('sizeAcres')}
               />
               <FieldError message={shownError('sizeAcres')} />
+            </div>
+
+            {/* --- Pincode/ZIP ------------------------------------------------ */}
+            <div>
+              <FieldLabel required>Pincode / ZIP</FieldLabel>
+              <input
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                onBlur={() => markTouched('pincode')}
+                placeholder="422001"
+                className={inputClass(!!shownError('pincode'))}
+                aria-invalid={!!shownError('pincode')}
+              />
+              <FieldError message={shownError('pincode')} />
             </div>
 
             {/* --- Growing conditions: extracted from location, not asked --- */}
