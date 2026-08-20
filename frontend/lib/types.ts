@@ -236,6 +236,57 @@ export interface EffectiveLocation {
  */
 export type FarmLocationStatus = 'no-farm' | 'missing' | 'unknown' | 'supported' | 'unsupported';
 
+/**
+ * Year-aware history types (genuine multi-year architecture). Mirrors
+ * backend/src/repositories/forecastRepository.ts's PriceHistoryRecord /
+ * YearlyHistoryResult / YearComparisonEntry exactly — reconciled against the
+ * real backend contract (not the provisional shape assumed during parallel
+ * implementation). Three endpoints: GET /forecast/years (bare number[]),
+ * /forecast/yearly-history ({year, records}), /forecast/year-comparison
+ * (bare YearComparisonEntry[]).
+ */
+
+/**
+ * A genuine historical price observation — deliberately NOT the same shape
+ * as Forecast. Forecast carries model output (trend/confidence/probabilities);
+ * a raw market_prices row has none of that, so it gets its own type rather
+ * than forcing fake trend/confidence values onto real historical data.
+ */
+export interface PriceHistoryRecord {
+    id: string;
+    commodity: string;
+    state: string;
+    district: string;
+    market: string;
+    date: string; // ISO date string
+    modalPrice: number;
+    minPrice: number | null;
+    maxPrice: number | null;
+    variety: string | null;
+    grade: string | null;
+    source: string;
+}
+
+/** One calendar year's worth of history for a single (commodity, market) pair. */
+export interface YearlyHistory {
+    year: number;
+    records: PriceHistoryRecord[];
+}
+
+/** Per-year summary for a year-over-year comparison. `hasData: false` means
+ * exactly that — no records exist for that year — and the UI must render an
+ * honest "no data" state, never a fabricated 0. `latestRecord` is the last
+ * observation within that year (by date). */
+export interface YearComparisonEntry {
+    year: number;
+    hasData: boolean;
+    recordCount: number;
+    latestRecord: PriceHistoryRecord | null;
+    minModalPrice: number | null;
+    maxModalPrice: number | null;
+    avgModalPrice: number | null;
+}
+
 export interface WeatherDay {
     day: string;
     date: string;

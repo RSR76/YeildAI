@@ -23,9 +23,16 @@ import type {
         WeatherDay,
     } from './types';
     
+    // Telangana-first default (Phase 11): used only when no farm is active and
+    // no map/manual override is set. Warangal is one of the 13 Telangana
+    // districts seeded in backend/db/migrations/005_seed_states_and_telangana_districts.sql.
+    // This no longer matches the pre-existing mock forecast rows below (which
+    // predate the Telangana-first decision and were never wired into
+    // dataService.ts / any live page) — they're kept only for any other stale
+    // reference and are not treated as authoritative demo data.
     export const DEFAULT_LOCATION = {
-        state: 'Uttar Pradesh',
-        district: 'Barabanki',
+        state: 'Telangana',
+        district: 'Warangal',
     };
     
     export const mockFarmProfile: FarmProfile = {

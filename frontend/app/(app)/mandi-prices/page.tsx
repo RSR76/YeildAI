@@ -17,6 +17,7 @@ import { Loading, ErrorView, EmptyState } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { TrendBadge, ConfidenceBadge } from '@/components/ui/Badge';
 import { LocationBar } from '@/components/location/LocationBar';
+import { YearlyPanel } from '@/components/mandi/YearlyPanel';
 import { getAllLatestForecasts, getForecastHistory } from '@/lib/dataService';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useEffectiveLocation } from '@/lib/useEffectiveLocation';
@@ -224,6 +225,10 @@ export default function MandiPricesPage() {
             </LineChart>
           </ResponsiveContainer>
         </Card>
+      )}
+
+      {selected && history.length > 0 && (
+        <YearlyPanel commodity={selected} state={history[0].state} district={history[0].district} market={history[0].market} />
       )}
     </PageWrapper>
   );
