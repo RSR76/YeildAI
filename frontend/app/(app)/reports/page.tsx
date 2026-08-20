@@ -22,7 +22,7 @@ export default function ReportsPage() {
     <PageWrapper title="Analytics Reports">
       <Card title="Available Reports">
         {reports.length === 0 ? (
-          <EmptyState message="No reports generated yet." />
+          <EmptyState message="Reports aren't connected yet — check back soon." />
         ) : (
           <div className="space-y-3">
             {reports.map((r) => (

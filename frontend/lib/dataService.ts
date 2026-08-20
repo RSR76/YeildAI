@@ -18,7 +18,6 @@ import {
     DEFAULT_LOCATION,
     mockMarketAnalysis,
     mockBrokers,
-    mockReports,
 } from './mockData';
 
 export { DEFAULT_LOCATION };
@@ -162,8 +161,9 @@ export function getBrokers(): Promise<Broker[]> {
 }
 
 export function getReports(): Promise<Report[]> {
-    // No dedicated /reports endpoint exists on the backend yet — this reads
-    // the `Report` model shape from the schema, so it will work as-is once
-    // one is added.
-    return Promise.resolve(mockReports);
+    // No dedicated /reports endpoint exists on the backend yet. Returning an
+    // empty list (rather than mock data) lets the page show its honest
+    // "no reports yet" empty state instead of placeholder content dressed up
+    // as real reports — see reports/page.tsx.
+    return Promise.resolve([]);
 }

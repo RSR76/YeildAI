@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, BarChart, Bar, Cell, ReferenceLine, RadarChart, PolarGrid,
@@ -480,7 +481,7 @@ export default function Dashboard() {
             <div className="hero-side">
               <div className="hero-gauge-wrap">
                 <ConfidenceGauge value={top.confidence} />
-                <div className="hero-cta"><ShieldCheck size={14} /> View full reasoning</div>
+                <Link href="/recommendations" className="hero-cta"><ShieldCheck size={14} /> View full reasoning</Link>
               </div>
               <div>
                 <div className="compare-row">

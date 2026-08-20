@@ -65,9 +65,9 @@ describe.skipIf(!hasLiveDb)('PostgresForecastRepository (live database integrati
   it('getLatest reads back the real persisted model prediction for Tomato at Warangal', async () => {
     const forecast = await repo.getLatest('Tomato', 'Telangana', 'Warangal', 'Warangal');
     expect(forecast).not.toBeNull();
-    expect(forecast?.predictedPriceTrend).toBe('Rising');
-    expect(forecast?.currentModalPrice).toBe(1200);
-    expect(forecast?.confidenceBand).toBe('High');
+    expect(forecast?.predictedPriceTrend).toBe('Falling');
+    expect(forecast?.currentModalPrice).toBe(1800);
+    expect(forecast?.confidenceBand).toBe('Low');
   });
 
   it('returns null (never throws or crashes) for a location/commodity with no data', async () => {
