@@ -4,12 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  Sprout,
   LineChart,
-  FlaskConical,
   CloudSun,
-  Tractor,
-  FileBarChart,
   Leaf,
   Map,
   UserPlus,
@@ -17,15 +13,14 @@ import {
 
 import { useAuth } from '@/lib/auth/AuthContext';
 
+// Investor-facing sidebar is intentionally trimmed to the three core
+// demo flows — Dashboard, Recommendations, Mandi Prices. The other farmer
+// pages (Yield Prediction, Soil Analysis, Weather, Farm Details, Reports)
+// still exist as routes, just not in this nav.
 const farmerNavItems = [
   { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { name: 'Recommendations', icon: Leaf, href: '/recommendations' },
   { name: 'Mandi Prices', icon: LineChart, href: '/mandi-prices' },
-  { name: 'Yield Prediction', icon: Sprout, href: '/yield-prediction' },
-  { name: 'Soil Analysis', icon: FlaskConical, href: '/soil-analysis' },
-  { name: 'Weather', icon: CloudSun, href: '/weather' },
-  { name: 'Farm Details', icon: Tractor, href: '/farm-details' },
-  { name: 'Reports', icon: FileBarChart, href: '/reports' },
 ];
 
 // Admin's world is regions, not a single farm — no Farm Details/Reports,
