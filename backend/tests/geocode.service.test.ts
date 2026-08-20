@@ -5,6 +5,7 @@ import * as csvForecastIndex from '../src/lib/csvForecastIndex.js';
 import {
   GeocodeUpstreamError,
   __clearGeocodeCacheForTests,
+  __setRateLimitIntervalMsForTests,
   matchSupportedLocation,
   reverseGeocode,
 } from '../src/services/geocode.service.js';
@@ -16,6 +17,9 @@ const fixturePath = path.resolve(here, 'fixtures/sample_lookup.csv');
 // (Maharashtra, Nashik), (Haryana, Karnal) — see sample_lookup.csv.
 beforeAll(() => {
   csvForecastIndex.__resetForTests(fixturePath);
+  // Real Nominatim spacing (1.1s) would make this suite slow for no benefit
+  // — tests exercise the rate limiter's own logic separately (below).
+  __setRateLimitIntervalMsForTests(0);
 });
 
 beforeEach(() => {
@@ -219,5 +223,30 @@ describe('matchSupportedLocation', () => {
       matchedDistrict: null,
       isSupportedLocation: false,
     });
+  });
+});
+
+describe('outbound Nominatim rate limiting', () => {
+  afterEach(() => {
+    __setRateLimitIntervalMsForTests(0);
+  });
+
+  it('spaces concurrent uncached requests at least minIntervalMs apart', async () => {
+    __setRateLimitIntervalMsForTests(50);
+    const callTimes: number[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() => {
+        callTimes.push(Date.now());
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) });
+      })
+    );
+
+    // Three distinct (uncacheable) coordinates fired concurrently.
+    await Promise.all([reverseGeocode(17.1, 79.1), reverseGeocode(17.2, 79.2), reverseGeocode(17.3, 79.3)]);
+
+    expect(callTimes).toHaveLength(3);
+    expect(callTimes[1]! - callTimes[0]!).toBeGreaterThanOrEqual(45);
+    expect(callTimes[2]! - callTimes[1]!).toBeGreaterThanOrEqual(45);
   });
 });

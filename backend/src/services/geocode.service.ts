@@ -12,11 +12,17 @@
  * - A small bounded, time-limited in-memory cache keyed by coordinates
  *   rounded to 3 decimal places (~110m) avoids repeat upstream calls for the
  *   same map click without needing persistent storage.
+ * - Nominatim's public-instance usage policy caps sustained use at 1
+ *   request/second, enforced against the whole calling application, not per
+ *   user (see https://operations.osmfoundation.org/policies/nominatim/). A
+ *   single user's clicks can't exceed that, but concurrent requests from
+ *   multiple users could without a shared outbound limiter — see
+ *   rateLimitedFetch below.
  */
 
 import { z } from 'zod';
-import * as csvForecastIndex from '../lib/csvForecastIndex.js';
-import type { LocationOption } from '../lib/csvForecastIndex.js';
+import { getForecastRepository } from '../repositories/forecastRepositoryFactory.js';
+import type { LocationOption } from '../repositories/forecastRepository.js';
 
 const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/reverse';
 const REQUEST_TIMEOUT_MS = 5000;
@@ -148,6 +154,31 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 
+// Serializes every outbound Nominatim call behind a minimum spacing so
+// concurrent requests from different users can't collectively exceed the
+// 1 req/sec public-instance policy. A single promise chain (not a token
+// bucket) is enough at this call volume and keeps the logic trivial to
+// reason about: each call waits for the previous one's slot, then waits out
+// whatever's left of the minimum interval before firing.
+let minIntervalMs = 1100;
+let queueTail: Promise<void> = Promise.resolve();
+let lastRequestAt = 0;
+
+function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
+  const run = queueTail.then(async () => {
+    const wait = Math.max(0, minIntervalMs - (Date.now() - lastRequestAt));
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    lastRequestAt = Date.now();
+  });
+  queueTail = run.catch(() => {});
+  return run.then(fn);
+}
+
+/** Test-only hook: shrinks (or removes) the outbound rate-limit spacing so tests don't pay real wall-clock delay. */
+export function __setRateLimitIntervalMsForTests(ms: number): void {
+  minIntervalMs = ms;
+}
+
 function cacheKey(lat: number, lon: number): string {
   return `${lat.toFixed(3)},${lon.toFixed(3)}`;
 }
@@ -199,13 +230,15 @@ async function fetchNominatim(lat: number, lon: number): Promise<NominatimRespon
 
   let response: Response;
   try {
-    response = await fetch(url, {
-      // Accept-Language header as a second, standard-HTTP way of asking for
-      // English — belt-and-suspenders with the accept-language query param
-      // above, which is the mechanism Nominatim's own docs specify.
-      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json', 'Accept-Language': 'en' },
-      signal: controller.signal,
-    });
+    response = await rateLimited(() =>
+      fetch(url, {
+        // Accept-Language header as a second, standard-HTTP way of asking for
+        // English — belt-and-suspenders with the accept-language query param
+        // above, which is the mechanism Nominatim's own docs specify.
+        headers: { 'User-Agent': USER_AGENT, Accept: 'application/json', 'Accept-Language': 'en' },
+        signal: controller.signal,
+      })
+    );
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
       throw new GeocodeUpstreamError('timeout', 'Reverse geocoding request timed out');
@@ -251,7 +284,7 @@ export async function reverseGeocode(lat: number, lon: number): Promise<ReverseG
   const country = typeof address.country === 'string' && address.country.trim() ? address.country.trim() : null;
   const displayName = typeof upstream.display_name === 'string' && upstream.display_name.trim() ? upstream.display_name.trim() : null;
 
-  const supportedLocations = csvForecastIndex.listAvailableLocations();
+  const supportedLocations = await getForecastRepository().listAvailableLocations();
   const match = matchSupportedLocation(state, district, supportedLocations);
 
   const result: ReverseGeocodeResult = {
