@@ -1,0 +1,28 @@
+name: yieldai-dev
+
+# Local development only. The password below is a placeholder for a
+# throwaway local container — never a real credential, never used against
+# any shared/staging/production database. NOT verified end-to-end in this
+# environment (Docker was not installed where this file was authored) — see
+# backend/db/README.md for how to validate it once Docker is available.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: yieldai-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yieldai
+      POSTGRES_PASSWORD: yieldai_dev_only
+      POSTGRES_DB: yieldai_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - yieldai_postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yieldai -d yieldai_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  yieldai_postgres_dev_data:

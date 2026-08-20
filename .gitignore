@@ -20,3 +20,12 @@ node_modules/
 # Large forecast datasets
 backend/forecast_lookup_all_commodities.csv
 backend/forecast_lookup_sample.csv
+
+# Python (scripts/etl, scripts/ml)
+__pycache__/
+*.pyc
+.pytest_cache/
+scripts/*/venv/
+scripts/*/.venv/
+backend/.env.dev-db
+.env.data-gov

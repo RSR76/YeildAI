@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { getLocations, reverseGeocode } from '@/lib/dataService';
 import { findSupportedMatch } from '@/lib/location';
 import { estimateSoilAndIrrigation } from '@/lib/soilLookup';
+import { TELANGANA_CENTER, TELANGANA_ZOOM } from '@/lib/mapConfig';
 import type { Location, LocationMatchStatus, ReverseGeocodeResult, SelectedCoordinates } from '@/lib/types';
 
 const LocationMap = dynamic(() => import('@/components/map/LocationMap'), {
@@ -18,9 +19,6 @@ const LocationMap = dynamic(() => import('@/components/map/LocationMap'), {
     </div>
   ),
 });
-
-const INDIA_CENTER: [number, number] = [22.9734, 78.6569];
-const INDIA_ZOOM = 5;
 
 type FieldName = 'name' | 'sizeAcres' | 'pincode';
 
@@ -257,11 +255,12 @@ export function AddFarmModal({ onClose }: { onClose: () => void }) {
                 )}
               </div>
               <p className="mb-2 text-xs text-stone-500">
-                Click anywhere on the map to drop a pin, then confirm it. Soil type and irrigation below are
+                The map opens centered on Telangana, YieldAI&apos;s currently supported state. Click anywhere
+                (including outside Telangana) to drop a pin, then confirm it. Soil type and irrigation below are
                 filled in automatically from this location.
               </p>
 
-              <LocationMap center={INDIA_CENTER} zoom={INDIA_ZOOM} selected={pin} onSelect={handleSelectPin} />
+              <LocationMap center={TELANGANA_CENTER} zoom={TELANGANA_ZOOM} selected={pin} onSelect={handleSelectPin} />
 
               {pin && (
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

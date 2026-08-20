@@ -1,0 +1,4 @@
+commodity,state,district,market,date,current_modal_price,predicted_price_trend,confidence,confidence_band,price_trend_score,prob_Falling,prob_Rising,prob_Stable
+Tomato,Telangana,Warangal,Warangal,2026-08-01,1200.0,Rising,0.82,High,0.64,0.09,0.82,0.09
+Onion,Telangana,Karimnagar,Karimnagar,2026-08-01,1800.0,Falling,0.55,Medium,-0.30,0.60,0.15,0.25
+BadRow,Telangana,Nowhere,Nowhere,2026-08-01,-5,Rising,0.5,High,0.1,0.3,0.3,0.4

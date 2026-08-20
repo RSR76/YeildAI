@@ -13,7 +13,7 @@
  */
 
 import { apiClient, apiRequest, type ApiClientOptions } from './api';
-import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption, ReverseGeocodeResult, AdminRegionSummary, AdminDistrictDetail } from './types';
+import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption, ReverseGeocodeResult, AdminRegionSummary, AdminDistrictDetail, YearlyHistory, YearComparisonEntry } from './types';
 import {
     DEFAULT_LOCATION,
     mockMarketAnalysis,
@@ -55,6 +55,53 @@ export function getForecastHistory(
     options?: ApiClientOptions
 ): Promise<Forecast[]> {
     return apiClient<Forecast[]>('/forecast/history', { commodity, state, district, market }, options);
+}
+
+/**
+ * Genuine multi-year history (Phase 7/14) — no mock fallback, same as the
+ * rest of the forecast/recommendation data: a backend failure must surface
+ * as a visible error, never silently swap in fabricated years.
+ */
+/** Distinct calendar years with at least one stored record for this (commodity, market) pair. Bare array — see backend/src/controllers/forecast.controller.ts#getYears. */
+export function listAvailableYears(
+    commodity: string,
+    state: string,
+    district: string,
+    market: string,
+    options?: ApiClientOptions
+): Promise<number[]> {
+    return apiClient<number[]>('/forecast/years', { commodity, state, district, market }, options);
+}
+
+export function getYearlyHistory(
+    commodity: string,
+    state: string,
+    district: string,
+    market: string,
+    year: number,
+    options?: ApiClientOptions
+): Promise<YearlyHistory> {
+    return apiClient<YearlyHistory>(
+        '/forecast/yearly-history',
+        { commodity, state, district, market, year: String(year) },
+        options
+    );
+}
+
+/** Year-over-year comparison. Bare array (one entry per requested year, in order) — see backend/src/controllers/forecast.controller.ts#getYearComparison. */
+export function compareYears(
+    commodity: string,
+    state: string,
+    district: string,
+    market: string,
+    years: number[],
+    options?: ApiClientOptions
+): Promise<YearComparisonEntry[]> {
+    return apiClient<YearComparisonEntry[]>(
+        '/forecast/year-comparison',
+        { commodity, state, district, market, years: years.join(',') },
+        options
+    );
 }
 
 export function getCommodities(options?: ApiClientOptions): Promise<string[]> {

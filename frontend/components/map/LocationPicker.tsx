@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { memo, useCallback, useState } from 'react';
 import { Loader2, MapPin, CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
 import { reverseGeocode as requestReverseGeocode } from '@/lib/dataService';
+import { TELANGANA_CENTER, TELANGANA_ZOOM } from '@/lib/mapConfig';
 import type { LocationMatchStatus, ReverseGeocodeResult, SelectedCoordinates } from '@/lib/types';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
@@ -14,11 +15,6 @@ const LocationMap = dynamic(() => import('./LocationMap'), {
     </div>
   ),
 });
-
-// Country-level view of India — a reasonable starting zoom that makes it
-// visually obvious the user can click anywhere to place a pin.
-const INDIA_CENTER: [number, number] = [22.9734, 78.6569];
-const INDIA_ZOOM = 5;
 
 function formatCoord(value: number): string {
   return value.toFixed(5);
@@ -87,11 +83,12 @@ export const LocationPicker = memo(function LocationPicker({
       {expanded && (
         <div id="location-map-panel" className="mt-3 space-y-3">
           <p className="text-xs text-stone-500">
-            Click anywhere on the map to drop a pin. Click elsewhere to move it. The state/district selectors above always
+            The map opens centered on Telangana, YieldAI&apos;s currently supported state — click anywhere (including
+            outside Telangana) to drop a pin. Click elsewhere to move it. The state/district selectors above always
             keep working, whether or not you use the map.
           </p>
 
-          <LocationMap center={INDIA_CENTER} zoom={INDIA_ZOOM} selected={pin} onSelect={handleSelectPin} />
+          <LocationMap center={TELANGANA_CENTER} zoom={TELANGANA_ZOOM} selected={pin} onSelect={handleSelectPin} />
 
           {pin && (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

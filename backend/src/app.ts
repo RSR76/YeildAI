@@ -13,8 +13,9 @@ import { AuthController } from './controllers/auth.controller.js';
 import { FarmController } from './controllers/farm.controller.js';
 
 import { requireAuth } from './middleware/auth.middleware.js';
+import { requireForecastRepositoryReady } from './middleware/forecastReadiness.middleware.js';
 
-import { getReadinessState } from './lib/csvForecastIndex.js';
+import { getRepositoryReadinessState } from './repositories/forecastRepositoryFactory.js';
 
 import adminRoutes from './routes/admin.routes.js';
 
@@ -30,21 +31,6 @@ const cropController = new CropController();
 const geocodeController = new GeocodeController();
 const authController = new AuthController();
 const farmController = new FarmController();
-
-function requireForecastIndexReady(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  if (getReadinessState().status === 'ready') {
-    return next();
-  }
-
-  res.status(503).json({
-    error: 'Backend is initializing',
-    retryable: true,
-  });
-}
 
 // ─────────────────────────────────────────────
 // Auth Routes
@@ -68,7 +54,11 @@ app.post('/api/farms/:id/activate', requireAuth, farmController.setActive);
 // Admin Routes
 // ─────────────────────────────────────────────
 
-app.use('/api/admin', adminRoutes);
+// Admin regions/district endpoints call into RecommendationService just like
+// the public forecast routes below, so they need the same readiness gate —
+// otherwise a request during startup/DB-outage surfaces as an opaque 500
+// with a raw "repository not initialized" error instead of a clean 503.
+app.use('/api/admin', requireForecastRepositoryReady, adminRoutes);
 
 // ─────────────────────────────────────────────
 // Forecast Routes
@@ -76,38 +66,58 @@ app.use('/api/admin', adminRoutes);
 
 app.get(
   '/api/forecast/latest',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   forecastController.getLatest
 );
 
 app.get(
   '/api/forecast/all-latest',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   forecastController.getAllLatest
 );
 
 app.get(
   '/api/forecast/commodities',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   forecastController.getCommodities
 );
 
 app.get(
   '/api/forecast/markets',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   forecastController.getMarkets
 );
 
 app.get(
   '/api/forecast/locations',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   forecastController.getLocations
 );
 
 app.get(
   '/api/forecast/history',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   forecastController.getHistory
+);
+
+// Year-aware endpoints (genuine multi-year history) — see
+// docs/POSTGRES_FORECAST_MIGRATION_PLAN.md and forecastRepository.ts.
+app.get(
+  '/api/forecast/years',
+  requireForecastRepositoryReady,
+  forecastController.getYears
+);
+
+app.get(
+  '/api/forecast/yearly-history',
+  requireForecastRepositoryReady,
+  forecastController.getYearlyHistory
+);
+
+app.get(
+  '/api/forecast/year-comparison',
+  requireForecastRepositoryReady,
+  forecastController.getYearComparison
 );
 
 // ─────────────────────────────────────────────
@@ -116,13 +126,13 @@ app.get(
 
 app.get(
   '/api/recommendations',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   recommendationController.getRecommendations
 );
 
 app.get(
   '/api/analysis',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   recommendationController.getMarketAnalysis
 );
 
@@ -132,7 +142,7 @@ app.get(
 
 app.get(
   '/api/geocode/reverse',
-  requireForecastIndexReady,
+  requireForecastRepositoryReady,
   geocodeController.reverseGeocode
 );
 
@@ -153,26 +163,32 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/ready', (req, res) => {
-  const state = getReadinessState();
+  const state = getRepositoryReadinessState();
 
   if (state.status === 'ready') {
     return res.status(200).json({
       status: 'ready',
-      commodityCount: state.commodityCount,
-      locationCount: state.locationCount,
+      dataSource: state.source,
       initializedInMs: state.readyAt - state.startedAt,
     });
   }
 
   if (state.status === 'failed') {
+    // /ready is unauthenticated and public — the detailed error (which can
+    // contain internal hostnames/ports/connection details for the Postgres
+    // path) is already logged server-side by
+    // forecastRepositoryFactory.initializeForecastRepository(); it must not
+    // also be echoed back in a response any caller on the internet can read.
     return res.status(503).json({
       status: 'failed',
-      error: 'Forecast index failed to initialize',
+      dataSource: state.source,
+      error: `Forecast data source (${state.source}) failed to initialize. See server logs for details.`,
     });
   }
 
   return res.status(503).json({
     status: 'initializing',
+    dataSource: state.source,
   });
 });
 
