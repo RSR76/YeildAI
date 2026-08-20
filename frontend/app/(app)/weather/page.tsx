@@ -9,10 +9,10 @@ import {
   Droplets,
   MapPin,
   PlusCircle,
+  Wind,
 } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
-import { KPICard } from '@/components/ui/KPICard';
 import { Loading } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { generateWeatherWeek } from '@/lib/deriveFarmData';
@@ -20,16 +20,18 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import type { WeatherDay } from '@/lib/types';
 
 const conditionIcon = (condition: string) => {
-  if (condition.includes('Thunder')) return CloudLightning;
-  if (condition.includes('Rain')) return CloudRain;
-  if (condition.includes('Cloud')) return Cloud;
+  const value = condition.toLowerCase();
+
+  if (value.includes('thunder')) return CloudLightning;
+  if (value.includes('rain')) return CloudRain;
+  if (value.includes('cloud')) return Cloud;
   return Sun;
 };
 
 function NoFarmState() {
   return (
     <PageWrapper title="Weather">
-      <Card title='Weather'>
+      <Card title="Weather">
         <div className="py-14 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
             <MapPin className="h-8 w-8 text-emerald-600" />
@@ -41,7 +43,7 @@ function NoFarmState() {
 
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-stone-500">
             Weather forecasts are specific to your farm location.
-            Add a farm to view the 7-day weather outlook and farming
+            Add a farm to view the weather outlook and farming
             impact for your location.
           </p>
 
@@ -69,10 +71,6 @@ export default function WeatherPage() {
   const location = activeFarm?.location;
 
   useEffect(() => {
-    /*
-     * No active farm = no weather data.
-     * Also clears any previous farm's forecast.
-     */
     if (!activeFarm) {
       setData(null);
       return;
@@ -81,12 +79,6 @@ export default function WeatherPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setData(null);
 
-    /*
-     * No dedicated backend endpoint yet — weather is currently
-     * derived per farm using deriveFarmData.ts.
-     *
-     * Recomputes whenever the active farm changes.
-     */
     const timer = setTimeout(() => {
       setData(generateWeatherWeek(activeFarm));
     }, 200);
@@ -94,9 +86,6 @@ export default function WeatherPage() {
     return () => clearTimeout(timer);
   }, [activeFarm]);
 
-  /*
-   * No farm = no weather forecast.
-   */
   if (!activeFarm) {
     return <NoFarmState />;
   }
@@ -111,75 +100,218 @@ export default function WeatherPage() {
 
   const today = data[0];
 
+  const forecastDays = data.slice(0, 5);
+
   const rainyDays = data.filter(
-    (d) => d.rainfallChance >= 50
+    (day) => day.rainfallChance >= 50
   ).length;
+
+  const TodayIcon = conditionIcon(today.condition);
 
   return (
     <PageWrapper title="Weather">
-      <p className="text-sm text-stone-500 -mt-4 mb-2">
-        7-day outlook for {location}.
-      </p>
+      <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
+      {/* Header */}
+      <div className="-mt-4 mb-5">
+        <p className="text-sm text-stone-500">
+          Current weather and forecast for your farm.
+        </p>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <KPICard
-          title="Today"
-          value={`${today.high}° / ${today.low}°C`}
-          change={today.condition}
-        />
-
-        <KPICard
-          title="Rain chance today"
-          value={`${today.rainfallChance}%`}
-        />
-
-        <KPICard
-          title="Rainy days this week"
-          value={`${rainyDays} of 7`}
-        />
+        {location && (
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-stone-400">
+            <MapPin className="h-3.5 w-3.5" />
+            {location}
+          </div>
+        )}
       </div>
 
-      <Card title="7-day forecast">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          {data.map((d) => {
-            const Icon = conditionIcon(d.condition);
+      {/* Main Weather Card */}
+<div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
 
-            return (
-              <div
-                key={d.date}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-stone-200 bg-white p-3 text-center"
-              >
-                <span className="text-xs font-medium text-stone-500">
-                  {d.day}
-                </span>
+{/* Current Weather */}
+<div className="p-6">
+  <p className="text-xs font-semibold text-stone-700">
+    Current Weather
+  </p>
 
-                <span className="text-[11px] text-stone-400">
-                  {d.date}
-                </span>
+  <div className="mt-6 flex items-center gap-4">
+    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+      <TodayIcon className="h-8 w-8 text-amber-500" />
+    </div>
 
-                <Icon className="my-1 h-6 w-6 text-emerald-600" />
+    <div>
+      <div className="flex items-start">
+        <span className="text-3xl font-semibold tracking-tight text-stone-800">
+          {today.high}°
+        </span>
 
-                <span className="text-sm font-semibold text-stone-800">
-                  {d.high}° / {d.low}°
-                </span>
+        <span className="ml-1 mt-1 text-sm text-stone-400">
+          C
+        </span>
+      </div>
 
-                <span className="flex items-center gap-1 text-[11px] text-stone-500">
-                  <Droplets className="h-3 w-3" />
-                  {d.rainfallChance}%
-                </span>
-              </div>
-            );
-          })}
+      <p className="mt-0.5 text-xs text-stone-500">
+        Today's high
+      </p>
+    </div>
+  </div>
+
+  <p className="mt-4 text-sm font-medium text-stone-700">
+    {today.condition}
+  </p>
+
+  {/* Current Weather Metrics */}
+  <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4 border-t border-stone-100 pt-5 sm:grid-cols-4">
+
+    <div>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-stone-400">
+        Rain Chance
+      </p>
+
+      <div className="mt-1 flex items-center gap-1.5">
+        <Droplets className="h-3.5 w-3.5 text-sky-500" />
+
+        <span className="text-xs font-semibold text-stone-700">
+          {today.rainfallChance}%
+        </span>
+      </div>
+    </div>
+
+    <div>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-stone-400">
+        Low
+      </p>
+
+      <p className="mt-1 text-xs font-semibold text-stone-700">
+        {today.low}°C
+      </p>
+    </div>
+
+    <div>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-stone-400">
+        Forecast
+      </p>
+
+      <p className="mt-1 text-xs font-semibold text-stone-700">
+        {today.day}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-stone-400">
+        Rainy Days
+      </p>
+
+      <p className="mt-1 text-xs font-semibold text-stone-700">
+        {rainyDays} this week
+      </p>
+    </div>
+
+  </div>
+</div>
+
+
+{/* Divider */}
+<div className="border-t border-stone-200" />
+
+
+{/* 5 Day Forecast */}
+<div className="p-6">
+  <p className="text-xs font-semibold text-stone-700">
+    5 Day Forecast
+  </p>
+
+  <div className="mt-4 divide-y divide-stone-100">
+
+    {forecastDays.map((day, index) => {
+      const Icon = conditionIcon(day.condition);
+
+      return (
+        <div
+          key={day.date}
+          className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-4 py-3"
+        >
+
+          {/* Day */}
+          <div>
+            <p className="text-[11px] font-semibold text-stone-700">
+              {index === 0 ? 'Today' : day.day}
+            </p>
+
+            <p className="mt-0.5 text-[9px] text-stone-400">
+              {day.date}
+            </p>
+          </div>
+
+
+          {/* Weather Icon */}
+          <div className="flex h-8 w-8 items-center justify-center">
+            <Icon
+              className={`h-5 w-5 ${
+                day.condition.toLowerCase().includes('rain')
+                  ? 'text-sky-500'
+                  : day.condition
+                      .toLowerCase()
+                      .includes('cloud')
+                  ? 'text-slate-400'
+                  : 'text-amber-500'
+              }`}
+            />
+          </div>
+
+
+          {/* Temperature */}
+          <div>
+            <span className="text-xs font-semibold text-stone-700">
+              {day.high}°C
+            </span>
+
+            <span className="ml-2 text-[10px] text-stone-400">
+              {day.low}°C
+            </span>
+          </div>
+
+
+          {/* Condition */}
+          <div className="min-w-[70px] text-right">
+            <p className="truncate text-[9px] text-stone-500">
+              {day.condition}
+            </p>
+
+            <div className="mt-0.5 flex items-center justify-end gap-1">
+              <Droplets className="h-2.5 w-2.5 text-sky-500" />
+
+              <span className="text-[9px] text-stone-400">
+                {day.rainfallChance}%
+              </span>
+            </div>
+          </div>
+
         </div>
-      </Card>
+      );
+    })}
 
-      <Card title="Farming impact">
-        <p className="text-sm text-stone-600">
+  </div>
+</div>
+
+</div>
+
+      {/* Farming Impact */}
+      <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+        <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-600">
+          <span className="text-[9px] font-bold text-white">✓</span>
+        </div>
+
+        <p className="text-[11px] leading-5 text-stone-600">
+          <span className="font-semibold text-emerald-700">
+            Tip:
+          </span>{' '}
           {rainyDays >= 3
-            ? 'Above-average rainfall is expected this week. Consider delaying irrigation and check field drainage before the next spell of rain.'
-            : 'Dry conditions are expected to dominate this week. Plan irrigation schedules accordingly, especially for moisture-sensitive crops.'}
+            ? 'Weather updates help you better plan irrigation and crop protection. Above-average rainfall is expected this week, so check field drainage before the next spell of rain.'
+            : 'Weather updates help you better plan irrigation and crop protection. Dry conditions are expected this week, so plan irrigation schedules accordingly.'}
         </p>
-      </Card>
+      </div>
+      </div>
     </PageWrapper>
   );
 }

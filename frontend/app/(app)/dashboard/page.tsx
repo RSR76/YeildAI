@@ -1,663 +1,665 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, BarChart, Bar, Cell, ReferenceLine, RadarChart, PolarGrid,
-  PolarAngleAxis, PolarRadiusAxis, Radar, LineChart as LineChartComponent,
-} from "recharts";
-import {
-  Sprout, Wheat, Leaf, TrendingUp, CloudRain, AlertTriangle,
-  ShieldCheck, ArrowUpRight, ArrowDownRight,
-  Info, Landmark, Truck, Gauge, Sparkles, MapPin, PlusCircle,
-} from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 
-import './dashboard.css';
-import { Loading, ErrorView } from '@/components/ui/States';
+import {
+  Sprout,
+  TrendingUp,
+  FlaskConical,
+  CloudSun,
+  BarChart3,
+  FileText,
+  ArrowUp,
+  ArrowDown,
+  Leaf,
+  Droplets,
+  Wind,
+  CloudRain,
+  Bell,
+  User,
+  ChevronDown,
+} from 'lucide-react';
+
 import { useAuth } from '@/lib/auth/AuthContext';
-import { getRecommendations, getForecastHistory } from '@/lib/dataService';
-import type { Recommendation, Forecast } from '@/lib/types';
-
-/* ------------------------------------------------------------------ */
-/* DERIVED DASHBOARD DATA                                              */
-/* ------------------------------------------------------------------ */
-
-interface DashCrop {
-  id: string;
-  name: string;
-  icon: typeof Sprout;
-  recommended: boolean;
-  profit: number;
-  profitDelta: number;
-  confidence: number;
-  demand: number;
-  supply: number;
-  balance: number;
-  risk: { weather: string; volatility: string; oversupply: string };
-  spark: number[];
-  market: number;
-}
-
-const iconForCategory = (category?: string | null, name?: string) => {
-  const n = (name ?? '').toLowerCase();
-  if (n.includes('wheat')) return Wheat;
-  const c = (category ?? '').toLowerCase();
-  if (c.includes('pulse') || c.includes('fiber') || c.includes('vegetable')) return Leaf;
-  return Sprout;
-};
-
-/**
- * Maps live recommendation data (per active farm) into the shape this
- * dashboard's visuals expect. Some fields — demand/supply split, weather
- * risk, and the sparkline — have no direct backend equivalent yet, so
- * they're derived deterministically from real fields (score, confidence,
- * trend) rather than randomized, so the dashboard stays illustrative but
- * consistent and still responds meaningfully to a farm switch.
- */
-function toDashCrops(recommendations: Recommendation[]): DashCrop[] {
-  if (recommendations.length === 0) return [];
-  const minProfit = Math.min(...recommendations.map((r) => r.expectedProfit));
-  const cutoff = Math.ceil(recommendations.length / 2);
-
-  return recommendations.map((r, i) => {
-    const balance = Math.max(-60, Math.min(60, Math.round((r.score - 50) * 1.2)));
-    const oversupply = r.predictedTrend === 'Falling' ? 'High' : r.predictedTrend === 'Stable' ? 'Medium' : 'Low';
-    const volatility = r.confidenceScore >= 0.75 ? 'Low' : r.confidenceScore >= 0.55 ? 'Medium' : 'High';
-    const weather = balance >= 0 ? 'Low' : balance >= -20 ? 'Medium' : 'High';
-    const trendUp = balance >= 0;
-    const spark = Array.from({ length: 8 }, (_, s) => {
-      const progress = s / 7;
-      const drift = trendUp ? progress * 25 : -progress * 20;
-      return Math.max(5, Math.round(30 + drift + (i % 3) * 3));
-    });
-
-    return {
-      id: r.cropId,
-      name: r.name,
-      icon: iconForCategory(r.category, r.name),
-      recommended: i < cutoff,
-      profit: r.expectedProfit,
-      profitDelta: minProfit > 0 ? Math.round(((r.expectedProfit - minProfit) / minProfit) * 100) : 0,
-      confidence: Math.round(r.confidenceScore * 100),
-      demand: Math.min(100, Math.round(50 + balance / 2)),
-      supply: Math.min(100, Math.round(50 - balance / 2)),
-      balance,
-      risk: { weather, volatility, oversupply },
-      spark,
-      market: r.currentPrice,
-    };
-  });
-}
-
-const riskAxes = [
-  { subject: "Weather", key: "weather" as const },
-  { subject: "Price volatility", key: "volatility" as const },
-  { subject: "Oversupply", key: "oversupply" as const },
-];
-
-const riskLevelToScore = (level: string) => (level === "Low" ? 22 : level === "Medium" ? 50 : 78);
-
-/* ------------------------------------------------------------------ */
-/* SMALL UI PRIMITIVES                                                 */
-/* ------------------------------------------------------------------ */
-
-const riskColor = (level: string) =>
-  level === "Low" ? "var(--forest-600)" : level === "Medium" ? "var(--gold-500)" : "var(--clay-500)";
-const riskBg = (level: string) =>
-  level === "Low" ? "var(--sage-100)" : level === "Medium" ? "var(--gold-100)" : "var(--clay-100)";
-
-function RiskPill({ level }: { level: string }) {
-  return (
-    <span
-      className="risk-pill"
-      style={{ color: riskColor(level), background: riskBg(level), borderColor: riskColor(level) + "33" }}
-    >
-      <span className="risk-dot" style={{ background: riskColor(level) }} />
-      {level}
-    </span>
-  );
-}
-
-function Sparkline({ data, positive }: { data: number[], positive: boolean }) {
-  const points = data.map((v, i) => ({ i, v }));
-  return (
-    <ResponsiveContainer width="100%" height={36}>
-      <LineChartComponent data={points} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
-        <Line
-          type="monotone" dataKey="v" stroke={positive ? "var(--forest-600)" : "var(--clay-500)"}
-          strokeWidth={2} dot={false}
-        />
-      </LineChartComponent>
-    </ResponsiveContainer>
-  );
-}
-
-/* Semi-circle "AI confidence" gauge — the signature visual */
-function ConfidenceGauge({ value = 87, size = 168 }) {
-  const r = size / 2 - 14;
-  const cx = size / 2;
-  const cy = size / 2;
-
-  // Clamp value so the gauge always stays between 0–100.
-  const safeValue = Math.max(0, Math.min(100, value));
-
-  // Left → right across the upper semicircle.
-  const startAngle = 180;
-  const endAngle = 0;
-  const angle = 180 - (safeValue / 100) * 180;
-
-  const toXY = (deg: number): [number, number] => {
-    const rad = (deg * Math.PI) / 180;
-
-    return [
-      cx + r * Math.cos(rad),
-      cy - r * Math.sin(rad),
-    ];
-  };
-
-  const [x1, y1] = toXY(startAngle);
-  const [x2, y2] = toXY(endAngle);
-  const [nx, ny] = toXY(angle);
-
-  // Background semicircle.
-  const arcPath = `
-    M ${x1} ${y1}
-    A ${r} ${r} 0 0 1 ${x2} ${y2}
-  `;
-
-  // Filled portion based on confidence.
-  const valuePath = `
-    M ${x1} ${y1}
-    A ${r} ${r} 0 0 1 ${nx} ${ny}
-  `;
-
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: size,
-        height: size * 0.62,
-      }}
-    >
-      <svg
-        width={size}
-        height={size * 0.62}
-        viewBox={`0 0 ${size} ${size * 0.62}`}
-      >
-        <defs>
-          <linearGradient
-            id="gaugeGrad"
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="0%"
-          >
-            <stop offset="0%" stopColor="var(--clay-500)" />
-            <stop offset="50%" stopColor="var(--gold-500)" />
-            <stop offset="100%" stopColor="var(--forest-600)" />
-          </linearGradient>
-        </defs>
-
-        {/* Background */}
-        <path
-          d={arcPath}
-          fill="none"
-          stroke="rgba(20,49,42,0.08)"
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-
-        {/* Confidence progress */}
-        <path
-          d={valuePath}
-          fill="none"
-          stroke="url(#gaugeGrad)"
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-
-        {/* Indicator */}
-        <circle
-          cx={nx}
-          cy={ny}
-          r="6.5"
-          fill="var(--surface)"
-          stroke="var(--forest-700)"
-          strokeWidth="2.5"
-        />
-      </svg>
-
-      <div
-        style={{
-          position: "absolute",
-          top: "58%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 30,
-            fontWeight: 600,
-            color: "var(--forest-900)",
-            lineHeight: 1,
-          }}
-        >
-          {Math.round(safeValue)}%
-        </div>
-
-        <div
-          style={{
-            fontSize: 10.5,
-            letterSpacing: "0.06em",
-            color: "var(--ink-soft)",
-            textTransform: "uppercase",
-            marginTop: 3,
-          }}
-        >
-          AI confidence
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GlassCard({ children, className = "", style = {}, onClick }: { children: React.ReactNode; className?: string; style?: React.CSSProperties; onClick?: () => void }) {
-  return <div className={`glass-card ${className}`} style={style} onClick={onClick}>{children}</div>;
-}
-
-function SectionLabel({ eyebrow, title, icon: Icon }: { eyebrow: string; title: string; icon: React.ComponentType<{ size?: number }> }) {
-  return (
-    <div className="section-label">
-      <div className="section-eyebrow">
-        {Icon && <Icon size={13} />} {eyebrow}
-      </div>
-      <h3>{title}</h3>
-    </div>
-  );
-}
-
-/* No-farm empty state — shown until the user has added and selected a farm */
-function NoFarmState() {
-  return (
-    <div className="dash-root">
-      <div className="main-col">
-        <GlassCard className="hero" style={{ textAlign: "center", padding: "48px 32px" }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              background: "var(--sage-100)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 18px",
-            }}
-          >
-            <MapPin size={26} color="var(--forest-600)" />
-          </div>
-          <h1 className="hero-title" style={{ fontSize: 22 }}>Add a farm to see your dashboard</h1>
-          <p className="hero-desc" style={{ maxWidth: 440, margin: "10px auto 22px" }}>
-            Recommendations, price forecasts, and risk analysis are generated for a specific
-            farm location. Add your first farm to get started.
-          </p>
-          <button
-            type="button"
-            className="hero-cta"
-            style={{ display: "inline-flex", cursor: "pointer", border: "none" }}
-            onClick={() => {
-              // Hook this up to whatever opens the "add farm" flow in this app,
-              // e.g. router.push('/farms/new') or an "add farm" modal trigger.
-              window.dispatchEvent(new CustomEvent('open-add-farm'));
-            }}
-          >
-            <PlusCircle size={14} /> Add your first farm
-          </button>
-        </GlassCard>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* MAIN DASHBOARD                                                      */
-/* ------------------------------------------------------------------ */
+import { getRecommendations } from '@/lib/dataService';
+import type { Recommendation } from '@/lib/types';
+import { Loading, ErrorView } from '@/components/ui/States';
 
 export default function Dashboard() {
+  const router = useRouter();
   const { activeFarm } = useAuth();
 
-  // No fallback to a default location anymore — state/district are only
-  // defined once a real farm is active, so nothing fetches or renders
-  // until then.
   const state = activeFarm?.state;
   const district = activeFarm?.district;
 
-  const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
-  const [priceHistory, setPriceHistory] = useState<Forecast[]>([]);
-  const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<
+    Recommendation[] | null
+  >(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Refetch whenever the active farm (and therefore state/district) changes
-  // — this is what makes the dashboard respond to switching farms. If there
-  // is no active farm yet, skip fetching entirely.
+  /*
+   * -----------------------------------------------------------
+   * FARMER NAME
+   * -----------------------------------------------------------
+   */
+
+  const farmerName = 'Farmer';
+
+  /*
+   * -----------------------------------------------------------
+   * LOAD RECOMMENDATIONS
+   * -----------------------------------------------------------
+   */
+
   useEffect(() => {
     if (!state || !district) {
       setRecommendations(null);
-      setSelectedCrop(null);
       setLoading(false);
       setError(null);
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    setError(null);
+
     getRecommendations(state, district)
       .then((data) => {
         setRecommendations(data);
-        setSelectedCrop(data[0]?.cropId ?? null);
       })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to load dashboard data.',
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [state, district]);
 
-  const crops = useMemo(() => toDashCrops(recommendations ?? []), [recommendations]);
+  /*
+   * -----------------------------------------------------------
+   * SORT RECOMMENDATIONS
+   * -----------------------------------------------------------
+   */
 
-  const top = crops.find((c) => c.id === selectedCrop) ?? crops[0];
-  const worst = crops[crops.length - 1];
-
-  // Pull a real price history for the top-ranked commodity so the forecast
-  // chart is tied to the active farm's actual top pick, not a fixed mock.
-  useEffect(() => {
-    if (!top || !state || !district) {
-      setPriceHistory([]);
-      return;
+  const crops = useMemo(() => {
+    if (!recommendations) {
+      return [];
     }
-    // No market name is available from Recommendation data directly; the
-    // district's primary mandi conventionally shares its name in this
-    // dataset (see mock data), so it's used as a reasonable default.
-    getForecastHistory(top.name, state, district, district)
-      .then(setPriceHistory)
-      .catch(() => setPriceHistory([]));
-  }, [top, state, district]);
 
-  const priceForecast = useMemo(
-    () =>
-      priceHistory.map((h) => ({
-        m: new Date(h.date).toLocaleDateString('en-IN', { month: 'short' }),
-        actual: h.currentModalPrice,
-      })),
-    [priceHistory]
-  );
+    return [...recommendations].sort(
+      (a, b) => b.confidenceScore - a.confidenceScore,
+    );
+  }, [recommendations]);
 
-  const balanceData = useMemo(() => [...crops].sort((a, b) => b.balance - a.balance), [crops]);
+  const topCrop = crops[0];
 
-  const radarData = top && worst
-    ? riskAxes.map((ax) => ({
-        subject: ax.subject,
-        [top.name]: riskLevelToScore(top.risk[ax.key]),
-        [worst.name]: riskLevelToScore(worst.risk[ax.key]),
-      }))
-    : [];
+  /*
+   * -----------------------------------------------------------
+   * NO FARM
+   * -----------------------------------------------------------
+   */
 
-  // Nothing to show until a farm exists — render the empty state and stop
-  // before touching any farm-scoped data below.
   if (!activeFarm || !state || !district) {
-    return <NoFarmState />;
+    return (
+      <div className="min-h-screen bg-white px-6 py-8">
+        <div className="flex min-h-[70vh] items-center justify-center">
+          <div className="w-full max-w-lg rounded-2xl border border-[#e4eadf] bg-[#f7faf3] p-10 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#e8f4df]">
+              <Sprout className="h-7 w-7 text-[#24833f]" />
+            </div>
+
+            <h1 className="mt-5 text-2xl font-bold text-[#17251d]">
+              Add your first farm
+            </h1>
+
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#657067]">
+              Add a farm to see crop recommendations, mandi prices,
+              weather information and yield predictions.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent('open-add-farm'))
+              }
+              className="mt-6 rounded-xl bg-[#24833f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d7036]"
+            >
+              Add Farm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
+
+  /*
+   * -----------------------------------------------------------
+   * LOADING
+   * -----------------------------------------------------------
+   */
 
   if (loading) {
     return (
-      <div className="dash-root">
-        <div className="main-col"><Loading /></div>
+      <div className="min-h-screen bg-white px-6 py-8">
+        <Loading />
       </div>
     );
   }
+
+  /*
+   * -----------------------------------------------------------
+   * ERROR
+   * -----------------------------------------------------------
+   */
 
   if (error) {
     return (
-      <div className="dash-root">
-        <div className="main-col"><ErrorView message={error} /></div>
+      <div className="min-h-screen bg-white px-6 py-8">
+        <ErrorView message={error} />
       </div>
     );
   }
 
-  if (!top || !worst) {
-    return (
-      <div className="dash-root">
-        <div className="main-col">
-          <GlassCard>
-            <p style={{ color: "var(--ink-soft)" }}>
-              No recommendations available for {district}, {state} yet.
-            </p>
-          </GlassCard>
-        </div>
-      </div>
-    );
-  }
+  /*
+   * -----------------------------------------------------------
+   * DASHBOARD
+   * -----------------------------------------------------------
+   */
 
   return (
-    <div className="dash-root">
-      {/* MAIN */}
-      <div className="main-col">
-        {/* HERO RECOMMENDATION */}
-        <GlassCard className="hero">
-          <div className="hero-grid">
-            <div>
-              <span className="hero-eyebrow"><Sparkles size={12} /> Top AI recommendation for {district}</span>
-              <h1 className="hero-title">Plant <em>{top.name}</em> this season —<br />not {worst.name.toLowerCase()} again.</h1>
-              <p className="hero-desc">
-                Based on current price trends and market signals for {district}, {state}, {top.name.toLowerCase()} offers
-                the strongest risk-adjusted return this cycle among the crops analyzed for your active farm.
-              </p>
-              <div className="hero-stats">
-                <div>
-                  <div className="hero-stat-label">Projected profit / acre</div>
-                  <div className="hero-stat-value">₹{top.profit.toLocaleString("en-IN")}</div>
-                </div>
-                <div>
-                  <div className="hero-stat-label">Vs. {worst.name.toLowerCase()}</div>
-                  <div className="hero-stat-value pos"><ArrowUpRight size={16} style={{ verticalAlign: "-2px" }} /> +{top.profitDelta}%</div>
-                </div>
-                <div>
-                  <div className="hero-stat-label">Demand–supply balance</div>
-                  <div className="hero-stat-value pos">{top.balance >= 0 ? "+" : ""}{top.balance}</div>
-                </div>
-              </div>
-              <div className="hero-chips">
-                <span className="chip"><TrendingUp size={13} color="var(--forest-600)" /> {top.balance >= 0 ? "Demand rising" : "Watch demand"}</span>
-                <span className="chip"><ShieldCheck size={13} color="var(--forest-600)" /> {top.risk.oversupply} oversupply risk</span>
-                <span className="chip"><Landmark size={13} color="var(--gold-500)" /> ₹{top.market.toLocaleString("en-IN")}/qtl</span>
-                <span className="chip"><CloudRain size={13} color="var(--forest-600)" /> {top.risk.weather} weather risk</span>
-              </div>
-            </div>
+    <div className="min-h-screen w-full bg-white px-5 pb-6 pt-[104px] sm:px-6 lg:px-8">
 
-            <div className="hero-divider" />
+      {/* HEADER */}
+      <header className="fixed left-[283px] right-0 top-0 z-40 h-[104px] border-b border-[#f0f1ef] bg-white">
+        <div className="flex h-full items-center justify-end px-8">
 
-            <div className="hero-side">
-              <div className="hero-gauge-wrap">
-                <ConfidenceGauge value={top.confidence} />
-                <Link href="/recommendations" className="hero-cta"><ShieldCheck size={14} /> View full reasoning</Link>
-              </div>
-              <div>
-                <div className="compare-row">
-                  <span className="compare-name"><top.icon size={14} color="var(--forest-600)" /> {top.name} profit</span>
-                  <span className="compare-badge" style={{ color: "var(--forest-600)" }}>₹{top.profit.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="compare-row">
-                  <span className="compare-name"><worst.icon size={14} color="var(--clay-500)" /> {worst.name} profit</span>
-                  <span className="compare-badge" style={{ color: "var(--clay-500)" }}>₹{worst.profit.toLocaleString("en-IN")}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
+          {/* RIGHT SIDE */}
+          <div className="flex items-center gap-5">
 
-        {/* DEMAND VS SUPPLY + PRICE FORECAST */}
-        <div className="row row-2">
-          <GlassCard>
-            <SectionLabel eyebrow="Core signal" title="Demand–supply balance by crop" icon={Gauge} />
-            <div className="legend-row" style={{ marginBottom: 6 }}>
-              <span><span className="legend-dot" style={{ background: "var(--forest-600)" }} />Undersupplied — opportunity</span>
-              <span><span className="legend-dot" style={{ background: "var(--clay-500)" }} />Oversupplied — risk</span>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={balanceData} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 5" stroke="var(--line)" horizontal={false} />
-                <XAxis type="number" domain={[-60, 60]} tick={{ fontSize: 11, fill: "var(--ink-soft)" }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" width={118} tick={{ fontSize: 12.5, fill: "var(--forest-900)" }} axisLine={false} tickLine={false} />
-                <ReferenceLine x={0} stroke="var(--ink-soft)" />
-                <Tooltip
-                  contentStyle={{ borderRadius: 12, border: "1px solid var(--line)", fontSize: 12.5, fontFamily: "var(--font-body)" }}
-                  formatter={(v) => [`${Number(v) > 0 ? "+" : ""}${v}`, "Balance"]}
-                />
-                <Bar dataKey="balance" radius={[6, 6, 6, 6]} barSize={16}>
-                  {balanceData.map((d) => (
-                    <Cell key={d.id} fill={d.balance >= 0 ? "var(--forest-600)" : "var(--clay-500)"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </GlassCard>
-
-          <GlassCard>
-            <SectionLabel eyebrow="Price history" title={`${top.name} price trend`} icon={TrendingUp} />
-            {priceForecast.length === 0 ? (
-              <p style={{ color: "var(--ink-soft)", fontSize: 13.5 }}>No price history available for {top.name} in {district} yet.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={priceForecast} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 5" stroke="var(--line)" vertical={false} />
-                  <XAxis dataKey="m" tick={{ fontSize: 11.5, fill: "var(--ink-soft)" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "var(--ink-soft)" }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--line)", fontSize: 12.5, fontFamily: "var(--font-body)" }} />
-                  <Line type="monotone" dataKey="actual" stroke="var(--forest-900)" strokeWidth={2.5} dot={{ r: 3 }} name={`${top.name} price (₹/qtl)`} connectNulls={false} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
-            <div className="legend-row">
-              <span><span className="legend-dot" style={{ background: "var(--forest-900)" }} />Modal price</span>
-            </div>
-          </GlassCard>
-        </div>
-
-        {/* CROP OPPORTUNITY GRID */}
-        <SectionLabel eyebrow="Ranked by AI" title="Crop opportunity comparison" icon={Gauge} />
-        <div className="crop-grid" style={{ marginTop: 0 }}>
-          {crops.map((c) => (
-            <GlassCard
-              key={c.id}
-              className={`crop-card ${selectedCrop === c.id ? "selected" : ""}`}
-              onClick={() => setSelectedCrop(c.id)}
+            {/* NOTIFICATIONS */}
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#374151] transition hover:bg-[#f5f7f4]"
             >
-              <div className="crop-card-top">
-                <div className="crop-icon"><c.icon size={17} /></div>
-                {c.recommended && <span className="rec-badge">Recommended</span>}
+              <Bell
+                className="h-6 w-6"
+                strokeWidth={1.8}
+              />
+            </button>
+
+            {/* DIVIDER */}
+            <div className="h-8 w-px bg-[#edf0eb]" />
+
+            {/* USER */}
+            <button
+              type="button"
+              className="flex items-center gap-3 rounded-full px-2 py-1.5 transition hover:bg-[#f7f9f6]"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f0f7eb]">
+                <User
+                  className="h-6 w-6 text-[#24833f]"
+                  strokeWidth={1.8}
+                />
               </div>
-              <div className="crop-name">{c.name}</div>
-              <div className="crop-profit">₹{c.profit.toLocaleString("en-IN")}</div>
-              <div className="crop-profit-sub">
-                predicted profit / acre ·{" "}
-                <span className={`crop-delta ${c.profitDelta >= 0 ? "up" : "down"}`}>
-                  {c.profitDelta >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                  {Math.abs(c.profitDelta)}%
-                </span>
+
+              <span className="text-[15px] font-medium text-[#111827]">
+                Hello, {farmerName}
+              </span>
+
+              <ChevronDown
+                className="h-4 w-4 text-[#374151]"
+                strokeWidth={2}
+              />
+            </button>
+
+          </div>
+        </div>
+      </header>
+
+      {/* DASHBOARD */}
+      <main className="w-full">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+
+          {/* =====================================================
+              CROP RECOMMENDATIONS
+          ====================================================== */}
+
+          <DashboardCard
+            className="border-[#dfead7] bg-[#f7faf3]"
+            icon={<Sprout className="h-7 w-7 text-[#55a83b]" />}
+            iconClassName="bg-[#eaf5df]"
+            title="Crop Recommendations"
+          >
+            <p className="mt-7 text-[15px] text-[#111827]">
+              Best Crop for You
+            </p>
+
+            <h2 className="mt-2 text-[25px] font-bold text-[#24833f]">
+              {topCrop?.name ?? 'Tomato'}
+            </h2>
+
+            <p className="mt-2 min-h-[52px] text-[15px] leading-7 text-[#111827]">
+              High demand in your region and suitable for current conditions.
+            </p>
+
+            <p className="mt-5 text-[15px] font-semibold text-[#24833f]">
+              Confidence:{' '}
+              {topCrop
+                ? `${Math.round(topCrop.confidenceScore * 100)}%`
+                : '92%'}
+            </p>
+
+            <DashboardButton
+              className="border-[#3a9b50] text-[#24833f]"
+              onClick={() => router.push('/recommendations')}
+            >
+              View Recommendations
+            </DashboardButton>
+          </DashboardCard>
+
+          {/* =====================================================
+              MANDI PRICES
+          ====================================================== */}
+
+          <DashboardCard
+            className="border-[#dce9f8] bg-[#f5f9ff]"
+            icon={<BarChart3 className="h-7 w-7 text-[#1976d2]" />}
+            iconClassName="bg-[#e7f1fc]"
+            title="Mandi Prices"
+          >
+            <p className="mt-7 text-[15px] text-[#111827]">
+              Today&apos;s Prices (₹/Quintal)
+            </p>
+
+            <div className="mt-5 space-y-4">
+              <PriceRow
+                name="Tomato"
+                price="₹2,800"
+                direction="up"
+              />
+
+              <PriceRow
+                name="Onion"
+                price="₹2,400"
+                direction="down"
+              />
+
+              <PriceRow
+                name="Soybean"
+                price="₹4,500"
+                direction="up"
+              />
+
+              <PriceRow
+                name="Wheat"
+                price="₹2,250"
+                direction="up"
+              />
+            </div>
+
+            <DashboardButton
+              className="border-[#2386d1] text-[#1680c8]"
+              onClick={() => router.push('/mandi-prices')}
+            >
+              View All Prices
+            </DashboardButton>
+          </DashboardCard>
+
+          {/* =====================================================
+              SOIL ANALYSIS
+          ====================================================== */}
+
+          <DashboardCard
+            className="border-[#eee3c6] bg-[#fffaf0]"
+            icon={<FlaskConical className="h-7 w-7 text-[#d79500]" />}
+            iconClassName="bg-[#fff3d3]"
+            title="Soil Analysis"
+          >
+            <div className="mt-7 space-y-5">
+              <MetricRow
+                label="pH"
+                value="6.5"
+                status="Good"
+                statusType="good"
+              />
+
+              <MetricRow
+                label="Nitrogen (N)"
+                value="240 kg/ha"
+                status="Good"
+                statusType="good"
+              />
+
+              <MetricRow
+                label="Phosphorus (P)"
+                value="18 kg/ha"
+                status="Medium"
+                statusType="medium"
+              />
+
+              <MetricRow
+                label="Potassium (K)"
+                value="320 kg/ha"
+                status="Good"
+                statusType="good"
+              />
+            </div>
+
+            <DashboardButton
+              className="border-[#dfa119] text-[#d18b00]"
+              onClick={() => router.push('/soil-analysis')}
+            >
+              View Soil Report
+            </DashboardButton>
+          </DashboardCard>
+
+          {/* =====================================================
+              WEATHER
+          ====================================================== */}
+
+          <DashboardCard
+            className="border-[#dcecef] bg-[#f3fbfd]"
+            icon={<CloudSun className="h-7 w-7 text-[#0e9eae]" />}
+            iconClassName="bg-[#e3f8fb]"
+            title="Weather"
+          >
+            <div className="mt-5 text-center">
+              <div className="text-[29px] font-bold text-[#111827]">
+                29°C
               </div>
-              <Sparkline data={c.spark} positive={c.profitDelta >= 0} />
-              <div className="crop-meta-row">
-                <div className="conf-bar-track"><div className="conf-bar-fill" style={{ width: `${c.confidence}%` }} /></div>
-                <span className="conf-label">{c.confidence}% conf.</span>
+
+              <div className="mt-1 text-[14px] text-[#111827]">
+                Sunny
               </div>
-              <div className="crop-meta-row">
-                <RiskPill level={c.risk.oversupply} />
-                <span style={{ fontSize: 11.5, color: "var(--ink-soft)" }}>oversupply risk</span>
-              </div>
-            </GlassCard>
-          ))}
+            </div>
+
+            <div className="my-4 h-px bg-[#dbe9ec]" />
+
+            <div className="space-y-3">
+              <WeatherRow
+                icon={<Droplets className="h-4 w-4" />}
+                label="Humidity"
+                value="62%"
+              />
+
+              <WeatherRow
+                icon={<Wind className="h-4 w-4" />}
+                label="Wind"
+                value="14 km/h"
+              />
+
+              <WeatherRow
+                icon={<CloudRain className="h-4 w-4" />}
+                label="Rain Chance"
+                value="20%"
+              />
+            </div>
+
+            <DashboardButton
+              className="border-[#10a3b3] text-[#0b94a4]"
+              onClick={() => router.push('/weather')}
+            >
+              View Forecast
+            </DashboardButton>
+          </DashboardCard>
+
+          {/* =====================================================
+              YIELD PREDICTION
+          ====================================================== */}
+
+          <DashboardCard
+            className="border-[#d8ebe3] bg-[#f2faf6]"
+            icon={<TrendingUp className="h-7 w-7 text-[#199d68]" />}
+            iconClassName="bg-[#e2f6eb]"
+            title="Yield Prediction"
+          >
+            <p className="mt-7 text-[15px] text-[#111827]">
+              Predicted Yield
+            </p>
+
+            <h2 className="mt-2 text-[25px] font-bold text-[#16854f]">
+              4.2 tonnes/acre
+            </h2>
+
+            <p className="mt-4 text-[15px] text-[#111827]">
+              For {topCrop?.name ?? 'Tomato'}
+            </p>
+
+            <p className="mt-4 text-[15px] font-semibold text-[#16854f]">
+              Confidence: 85%
+            </p>
+
+            <DashboardButton
+              className="border-[#329b65] text-[#16854f]"
+              onClick={() => router.push('/yield-prediction')}
+            >
+              View Prediction
+            </DashboardButton>
+          </DashboardCard>
+
+          {/* =====================================================
+              REPORTS
+          ====================================================== */}
+
+          <DashboardCard
+            className="border-[#f0e1d6] bg-[#fff7f1]"
+            icon={<FileText className="h-7 w-7 text-[#e26700]" />}
+            iconClassName="bg-[#fff0e4]"
+            title="Reports"
+          >
+            <p className="mt-7 text-[15px] text-[#111827]">
+              Your farm reports are ready.
+            </p>
+
+            <div className="mt-5 space-y-3 text-[15px] text-[#111827]">
+              <p>• Soil Health Report</p>
+              <p>• Crop Performance Report</p>
+              <p>• Yield Report</p>
+            </div>
+
+            <DashboardButton
+              className="border-[#ed7b23] text-[#dc6200]"
+              onClick={() => router.push('/reports')}
+            >
+              View Reports
+            </DashboardButton>
+          </DashboardCard>
+
         </div>
 
-        {/* RISK RADAR + MARKET PRICES */}
-        <div className="row row-2">
-          <GlassCard>
-            <SectionLabel eyebrow={`${top.name} vs ${worst.name}`} title="Risk profile" icon={AlertTriangle} />
-            <ResponsiveContainer width="100%" height={230}>
-              <RadarChart data={radarData} outerRadius={78}>
-                <PolarGrid stroke="var(--line)" />
-                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10.5, fill: "var(--ink-soft)" }} />
-                <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
-                <Radar name={top.name} dataKey={top.name} stroke="var(--forest-600)" fill="var(--forest-600)" fillOpacity={0.28} />
-                <Radar name={worst.name} dataKey={worst.name} stroke="var(--clay-500)" fill="var(--clay-500)" fillOpacity={0.18} />
-              </RadarChart>
-            </ResponsiveContainer>
-            <div className="legend-row">
-              <span><span className="legend-dot" style={{ background: "var(--forest-600)" }} />{top.name}</span>
-              <span><span className="legend-dot" style={{ background: "var(--clay-500)" }} />{worst.name}</span>
-            </div>
-          </GlassCard>
+        {/* =======================================================
+            TIP BAR
+        ======================================================== */}
 
-          <GlassCard>
-            <SectionLabel eyebrow="Current mandi prices" title="Market price by crop" icon={Landmark} />
-            {crops.slice(0, 5).map((c) => {
-              const max = Math.max(...crops.map((x) => x.market), 1) * 1.1;
-              return (
-                <div className="msp-row" key={c.id}>
-                  <span className="msp-name">{c.name}</span>
-                  <div className="msp-track">
-                    <div className="msp-fill" style={{ width: `${(c.market / max) * 100}%` }} />
-                  </div>
-                  <span className="msp-value">₹{c.market.toLocaleString("en-IN")}</span>
-                </div>
-              );
-            })}
-            <div className="legend-row" style={{ marginTop: 6 }}>
-              <span><span className="legend-dot" style={{ background: "var(--gold-500)" }} />Market price (₹/qtl)</span>
-            </div>
-          </GlassCard>
+        <div className="mt-5 flex items-center gap-4 rounded-xl border border-[#dce8d4] bg-[#f4f8ef] px-5 py-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e6f1dc]">
+            <Leaf className="h-5 w-5 text-[#54a53d]" />
+          </div>
+
+          <p className="text-[15px] text-[#111827]">
+            <span className="font-semibold">Tip:</span>{' '}
+            Keep your farm details and crop data updated to get the most
+            accurate recommendations.
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+/* ===============================================================
+   DASHBOARD CARD
+================================================================ */
+
+function DashboardCard({
+  children,
+  title,
+  icon,
+  iconClassName,
+  className = '',
+}: {
+  children: ReactNode;
+  title: string;
+  icon: ReactNode;
+  iconClassName?: string;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`flex min-h-[390px] flex-col rounded-2xl border p-6 ${className}`}
+    >
+      <div className="flex items-center gap-4">
+        <div
+          className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full ${
+            iconClassName ?? 'bg-white'
+          }`}
+        >
+          {icon}
         </div>
 
-        {/* AI INSIGHTS FEED */}
-        <div className="row" style={{ gridTemplateColumns: "1fr" }}>
-          <GlassCard>
-            <SectionLabel eyebrow="Explainable AI" title="Why these recommendations" icon={Info} />
-            <div>
-              <div className="insight-item">
-                <div className="insight-icon good"><TrendingUp size={16} /></div>
-                <div>
-                  <div className="insight-title">{top.name} leads for {district}</div>
-                  <div className="insight-body">
-                    {top.name} scores highest on expected profit and price trend among the crops analyzed
-                    for your active farm, with a demand–supply balance of {top.balance >= 0 ? "+" : ""}{top.balance}.
-                  </div>
-                </div>
-              </div>
-              <div className="insight-item">
-                <div className="insight-icon warn"><AlertTriangle size={16} /></div>
-                <div>
-                  <div className="insight-title">{worst.name} carries the most risk this cycle</div>
-                  <div className="insight-body">
-                    {worst.name} shows {worst.risk.oversupply.toLowerCase()} oversupply risk and a
-                    demand–supply balance of {worst.balance >= 0 ? "+" : ""}{worst.balance}, the weakest in this comparison.
-                  </div>
-                </div>
-              </div>
-              <div className="insight-item">
-                <div className="insight-icon neutral"><Truck size={16} /></div>
-                <div>
-                  <div className="insight-title">Switch farms to compare other districts</div>
-                  <div className="insight-body">
-                    These recommendations are specific to {district}, {state}. Use the farm switcher above to
-                    see how the ranking changes for your other farms.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
+        <h2 className="text-[18px] font-semibold text-[#111827]">
+          {title}
+        </h2>
       </div>
+
+      <div className="flex flex-1 flex-col">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/* ===============================================================
+   DASHBOARD BUTTON
+================================================================ */
+
+function DashboardButton({
+  children,
+  className = '',
+  onClick,
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`mt-auto w-full rounded-lg border bg-transparent py-3 text-[15px] font-semibold transition hover:bg-white/70 ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ===============================================================
+   MANDI PRICE ROW
+================================================================ */
+
+function PriceRow({
+  name,
+  price,
+  direction,
+}: {
+  name: string;
+  price: string;
+  direction: 'up' | 'down';
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[15px] font-semibold text-[#111827]">
+        {name}
+      </span>
+
+      <div className="flex items-center gap-5">
+        <span className="text-[15px] text-[#111827]">
+          {price}
+        </span>
+
+        {direction === 'up' ? (
+          <ArrowUp className="h-5 w-5 text-[#159447]" />
+        ) : (
+          <ArrowDown className="h-5 w-5 text-red-500" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ===============================================================
+   SOIL METRIC
+================================================================ */
+
+function MetricRow({
+  label,
+  value,
+  status,
+  statusType,
+}: {
+  label: string;
+  value: string;
+  status: string;
+  statusType: 'good' | 'medium';
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[15px] font-semibold text-[#111827]">
+        {label}
+      </span>
+
+      <div className="flex items-center gap-4">
+        <span className="text-[14px] text-[#111827]">
+          {value}
+        </span>
+
+        <span
+          className={`rounded-lg px-3 py-1 text-[13px] font-medium ${
+            statusType === 'good'
+              ? 'bg-[#e8f4df] text-[#17752f]'
+              : 'bg-[#fff0cc] text-[#c77a00]'
+          }`}
+        >
+          {status}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ===============================================================
+   WEATHER ROW
+================================================================ */
+
+function WeatherRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between text-[14px]">
+      <div className="flex items-center gap-2 text-[#111827]">
+        <span className="text-[#1999a9]">
+          {icon}
+        </span>
+
+        <span>{label}</span>
+      </div>
+
+      <span className="font-medium text-[#111827]">
+        {value}
+      </span>
     </div>
   );
 }

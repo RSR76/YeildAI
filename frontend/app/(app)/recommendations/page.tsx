@@ -1,51 +1,74 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Cell,
-} from 'recharts';
-import {
-  Trophy,
-  Sparkles,
-  AlertTriangle,
-  ChevronDown,
-  ChevronUp,
   Info,
   MapPin,
   PlusCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Leaf,
+  ChevronDown,
 } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
 import { Loading, ErrorView } from '@/components/ui/States';
 import { PageWrapper } from '@/components/layout/PageWrapper';
-import { TrendBadge, ConfidenceBadge } from '@/components/ui/Badge';
 import { LocationBar } from '@/components/location/LocationBar';
 import { getRecommendations } from '@/lib/dataService';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useEffectiveLocation } from '@/lib/useEffectiveLocation';
-import type { Recommendation, ReasoningDirection } from '@/lib/types';
+import type {
+  Recommendation,
+  ReasoningDirection,
+} from '@/lib/types';
+
+/* =========================================================
+   CROP IMAGES
+   ========================================================= */
+
+const CROP_IMAGES: Record<string, string> = {
+  tomato: '/images/crops/tomato.jpg',
+  soybean: '/images/crops/soybean.jpg',
+  chilli: '/images/crops/chilli.jpg',
+  chili: '/images/crops/chilli.jpg',
+  onion: '/images/crops/onion.jpg',
+  wheat: '/images/crops/wheat.jpg',
+  rice: '/images/crops/rice.jpg',
+  maize: '/images/crops/maize.jpg',
+  corn: '/images/crops/maize.jpg',
+};
+
+const DEFAULT_CROP_IMAGE = '/images/crops/default.jpg';
+
+function getCropImage(name: string) {
+  return CROP_IMAGES[name.toLowerCase().trim()] ?? DEFAULT_CROP_IMAGE;
+}
+
+/* =========================================================
+   REASONING STYLES
+   ========================================================= */
 
 const DIRECTION_STYLES: Record<
   ReasoningDirection,
-  { label: string; className: string }
+  {
+    label: string;
+    className: string;
+  }
 > = {
   positive: {
     label: 'Positive',
     className:
       'border-emerald-200 bg-emerald-50 text-emerald-700',
   },
+
   risk: {
     label: 'Risk',
     className:
       'border-red-200 bg-red-50 text-red-700',
   },
+
   informational: {
     label: 'Info',
     className:
@@ -53,32 +76,35 @@ const DIRECTION_STYLES: Record<
   },
 };
 
-/**
- * True only when every value is a finite, non-negative number and
- * the total is greater than zero.
- */
+/* =========================================================
+   PROBABILITY HELPERS
+   ========================================================= */
+
 function hasValidProbabilities(values: number[]): boolean {
   if (values.length === 0) return false;
-  if (!values.every((v) => Number.isFinite(v) && v >= 0)) return false;
+
+  if (!values.every((v) => Number.isFinite(v) && v >= 0)) {
+    return false;
+  }
 
   return values.reduce((sum, v) => sum + v, 0) > 0;
 }
 
-/**
- * Converts probability values into whole percentage points
- * that add up to exactly 100.
- */
 function largestRemainderRound(values: number[]): number[] {
   if (!hasValidProbabilities(values)) {
     return values.map(() => 0);
   }
 
   const sum = values.reduce((s, v) => s + v, 0);
+
   const scaled = values.map((v) => (v / sum) * 100);
+
   const floors = scaled.map((v) => Math.floor(v));
+
   const result = [...floors];
 
-  let diff = 100 - floors.reduce((s, v) => s + v, 0);
+  let diff =
+    100 - floors.reduce((s, v) => s + v, 0);
 
   const order = scaled
     .map((v, i) => ({
@@ -88,7 +114,7 @@ function largestRemainderRound(values: number[]): number[] {
     .sort((a, b) =>
       diff >= 0
         ? b.remainder - a.remainder
-        : a.remainder - b.remainder
+        : a.remainder - b.remainder,
     );
 
   let idx = 0;
@@ -98,7 +124,8 @@ function largestRemainderRound(values: number[]): number[] {
 
     if (target) {
       result[target.i] =
-        (result[target.i] ?? 0) + (diff > 0 ? 1 : -1);
+        (result[target.i] ?? 0) +
+        (diff > 0 ? 1 : -1);
     }
 
     diff += diff > 0 ? -1 : 1;
@@ -107,6 +134,10 @@ function largestRemainderRound(values: number[]): number[] {
 
   return result;
 }
+
+/* =========================================================
+   PROBABILITY BREAKDOWN
+   ========================================================= */
 
 function ProbabilityBreakdown({
   probRising,
@@ -117,64 +148,66 @@ function ProbabilityBreakdown({
   probStable: number;
   probFalling: number;
 }) {
-  const [risingPct, stablePct, fallingPct] =
-    largestRemainderRound([
-      probRising,
-      probStable,
-      probFalling,
-    ]);
+  const [
+    risingPct,
+    stablePct,
+    fallingPct,
+  ] = largestRemainderRound([
+    probRising,
+    probStable,
+    probFalling,
+  ]);
 
   const rows = [
     {
       label: 'Rising',
       pct: risingPct ?? 0,
-      color: 'var(--forest-600)',
+      className: 'bg-emerald-500',
     },
     {
       label: 'Stable',
       pct: stablePct ?? 0,
-      color: 'var(--gold-500)',
+      className: 'bg-amber-400',
     },
     {
       label: 'Falling',
       pct: fallingPct ?? 0,
-      color: 'var(--clay-500)',
+      className: 'bg-red-400',
     },
   ];
 
   return (
-    <div className="space-y-1.5">
-      {rows.map((r) => (
+    <div className="space-y-2">
+      {rows.map((row) => (
         <div
-          key={r.label}
+          key={row.label}
           className="flex items-center gap-2 text-xs"
         >
           <span className="w-12 shrink-0 text-stone-500">
-            {r.label}
+            {row.label}
           </span>
 
-          <div
-            className="h-2 flex-1 overflow-hidden rounded-full bg-stone-100"
-            role="img"
-            aria-label={`${r.label} probability ${r.pct}%`}
-          >
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-stone-100">
             <div
-              className="h-full rounded-full"
+              className={`h-full rounded-full ${row.className}`}
               style={{
-                width: `${r.pct}%`,
-                background: r.color,
+                width: `${row.pct}%`,
               }}
             />
           </div>
 
-          <span className="w-9 shrink-0 text-right font-mono text-stone-600">
-            {r.pct}%
+          <span className="w-9 text-right font-medium text-stone-600">
+            {row.pct}%
           </span>
         </div>
       ))}
     </div>
   );
 }
+
+/* =========================================================
+   REASONING PANEL
+   ========================================================= */
 
 function ReasoningPanel({
   rec,
@@ -184,38 +217,41 @@ function ReasoningPanel({
   if (!rec.reasoning) {
     return (
       <p className="text-sm text-stone-500">
-        Detailed reasoning is not available for this recommendation.
+        Detailed reasoning is not available for this
+        recommendation.
       </p>
     );
   }
 
   return (
     <div className="space-y-4 text-sm">
-      <p className="text-stone-700">
+      <p className="leading-6 text-stone-700">
         {rec.reasoning.summary}
       </p>
 
       <div className="space-y-2">
-        {rec.reasoning.factors.map((f) => {
+        {rec.reasoning.factors.map((factor) => {
           const style =
-            DIRECTION_STYLES[f.direction] ??
+            DIRECTION_STYLES[factor.direction] ??
             DIRECTION_STYLES.informational;
 
           return (
             <div
-              key={f.factor}
-              className={`flex flex-col gap-1 rounded-lg border px-3 py-2 sm:flex-row sm:items-start sm:gap-2 ${style.className}`}
+              key={factor.factor}
+              className={`rounded-xl border px-3 py-2.5 ${style.className}`}
             >
-              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide">
-                {style.label}
-              </span>
+              <div className="flex gap-2">
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide">
+                  {style.label}
+                </span>
 
-              <span>
-                <strong className="font-medium">
-                  {f.factor}:
-                </strong>{' '}
-                {f.detail}
-              </span>
+                <span>
+                  <strong className="font-semibold">
+                    {factor.factor}:
+                  </strong>{' '}
+                  {factor.detail}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -225,8 +261,8 @@ function ReasoningPanel({
         typeof rec.probStable === 'number' &&
         typeof rec.probFalling === 'number' && (
           <div>
-            <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-stone-400">
-              Trend probability breakdown
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">
+              Price trend probability
             </div>
 
             {hasValidProbabilities([
@@ -249,56 +285,31 @@ function ReasoningPanel({
 
       {rec.reasoning.limitations.length > 0 && (
         <ul className="space-y-1 border-t border-stone-100 pt-3 text-xs text-stone-500">
-          {rec.reasoning.limitations.map((l) => (
-            <li
-              key={l}
-              className="flex items-start gap-1.5"
-            >
-              <Info className="mt-0.5 h-3 w-3 shrink-0" />
-              <span>{l}</span>
-            </li>
-          ))}
+          {rec.reasoning.limitations.map(
+            (limitation) => (
+              <li
+                key={limitation}
+                className="flex items-start gap-1.5"
+              >
+                <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                <span>{limitation}</span>
+              </li>
+            ),
+          )}
         </ul>
       )}
     </div>
   );
 }
 
-function FullReasoningToggle({
-  expanded,
-  onToggle,
-  controlsId,
-  cropName,
-}: {
-  expanded: boolean;
-  onToggle: () => void;
-  controlsId: string;
-  cropName: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={expanded}
-      aria-controls={controlsId}
-      aria-label={`${expanded ? 'Hide' : 'Show'} full reasoning for ${cropName}`}
-      className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50"
-    >
-      {expanded ? (
-        <ChevronUp size={14} />
-      ) : (
-        <ChevronDown size={14} />
-      )}
-
-      {expanded ? 'Hide full reasoning' : 'Full reasoning'}
-    </button>
-  );
-}
+/* =========================================================
+   NO FARM STATE
+   ========================================================= */
 
 function NoFarmState() {
   return (
     <PageWrapper title="Crop Recommendations">
-      <Card title='Recommendations'>
+      <Card title="Recommendations">
         <div className="py-14 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
             <MapPin className="h-8 w-8 text-emerald-600" />
@@ -309,19 +320,20 @@ function NoFarmState() {
           </h2>
 
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-stone-500">
-            Crop recommendations are generated for a specific
-            farm based on its location and market conditions.
-            Add a farm to see which crops are recommended for you.
+            Crop recommendations are generated for a
+            specific farm based on its location and
+            market conditions. Add a farm to see which
+            crops are recommended for you.
           </p>
 
           <button
             type="button"
             onClick={() => {
               window.dispatchEvent(
-                new CustomEvent('open-add-farm')
+                new CustomEvent('open-add-farm'),
               );
             }}
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-800"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
           >
             <PlusCircle className="h-4 w-4" />
             Add your first farm
@@ -331,6 +343,77 @@ function NoFarmState() {
     </PageWrapper>
   );
 }
+
+/* =========================================================
+   TREND ICON
+   ========================================================= */
+
+function TrendIcon({
+  trend,
+}: {
+  trend: string;
+}) {
+  if (trend === 'rising') {
+    return (
+      <span className="inline-flex items-center gap-1 text-emerald-600">
+        <TrendingUp className="h-4 w-4" />
+        Rising
+      </span>
+    );
+  }
+
+  if (trend === 'falling') {
+    return (
+      <span className="inline-flex items-center gap-1 text-red-500">
+        <TrendingDown className="h-4 w-4" />
+        Falling
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-stone-500">
+      <Minus className="h-4 w-4" />
+      Stable
+    </span>
+  );
+}
+
+/* =========================================================
+   PROGRESS BAR
+   ========================================================= */
+
+function ProgressBar({
+  value,
+}: {
+  value: number;
+}) {
+  const safeValue = Math.min(
+    100,
+    Math.max(0, value),
+  );
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-2 w-20 overflow-hidden rounded-full bg-stone-100">
+        <div
+          className="h-full rounded-full bg-emerald-500 transition-all"
+          style={{
+            width: `${safeValue}%`,
+          }}
+        />
+      </div>
+
+      <span className="text-xs font-medium text-stone-500">
+        {safeValue}%
+      </span>
+    </div>
+  );
+}
+
+/* =========================================================
+   MAIN PAGE
+   ========================================================= */
 
 export default function RecommendationsPage() {
   const { activeFarm } = useAuth();
@@ -346,12 +429,14 @@ export default function RecommendationsPage() {
     resetToFarm,
   } = useEffectiveLocation(activeFarm);
 
-  const { state, district } = effectiveLocation;
+  const { state, district } =
+    effectiveLocation;
 
   const [data, setData] =
     useState<Recommendation[] | null>(null);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
   const [error, setError] =
     useState<string | null>(null);
@@ -359,9 +444,13 @@ export default function RecommendationsPage() {
   const [expandedCropIds, setExpandedCropIds] =
     useState<Set<string>>(new Set());
 
+  /* =======================================================
+     TOGGLE DETAILS
+     ======================================================= */
+
   const toggleReasoning = (cropId: string) => {
-    setExpandedCropIds((prev) => {
-      const next = new Set(prev);
+    setExpandedCropIds((previous) => {
+      const next = new Set(previous);
 
       if (next.has(cropId)) {
         next.delete(cropId);
@@ -373,10 +462,10 @@ export default function RecommendationsPage() {
     });
   };
 
-  /*
-   * Only fetch recommendations when a real active farm exists
-   * and a valid farm location is available.
-   */
+  /* =======================================================
+     LOAD RECOMMENDATIONS
+     ======================================================= */
+
   useEffect(() => {
     if (!activeFarm || !state || !district) {
       setData(null);
@@ -385,9 +474,9 @@ export default function RecommendationsPage() {
       return;
     }
 
-    const controller = new AbortController();
+    const controller =
+      new AbortController();
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     setData(null);
@@ -396,32 +485,42 @@ export default function RecommendationsPage() {
     getRecommendations(
       state,
       district,
-      { signal: controller.signal }
+      {
+        signal: controller.signal,
+      },
     )
       .then((result) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) {
+          return;
+        }
+
         setData(result);
       })
       .catch((err) => {
-        if (controller.signal.aborted) return;
-        setError(err.message);
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to load recommendations.',
+        );
       })
       .finally(() => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) {
+          return;
+        }
+
         setLoading(false);
       });
 
     return () => controller.abort();
   }, [activeFarm, state, district]);
 
-  const chartData = useMemo(
-    () =>
-      (data ?? []).map((r) => ({
-        name: r.name,
-        profit: r.expectedProfit,
-      })),
-    [data]
-  );
+  /* =======================================================
+     LOCATION BAR
+     ======================================================= */
 
   const locationBar = (
     <LocationBar
@@ -439,7 +538,7 @@ export default function RecommendationsPage() {
         ) {
           setMapLocation(
             result.matchedState,
-            result.matchedDistrict
+            result.matchedDistrict,
           );
         }
       }}
@@ -447,33 +546,45 @@ export default function RecommendationsPage() {
     />
   );
 
-  /*
-   * No farm = no recommendations page content.
-   *
-   * This is intentionally before loading/error states so a user
-   * without a farm does not see a loading screen or an error.
-   */
+  /* =======================================================
+     NO FARM
+     ======================================================= */
+
   if (!activeFarm) {
     return <NoFarmState />;
   }
+
+  /* =======================================================
+     LOADING
+     ======================================================= */
 
   if (loading) {
     return (
       <PageWrapper title="Crop Recommendations">
         {locationBar}
+
         <Loading />
       </PageWrapper>
     );
   }
 
+  /* =======================================================
+     ERROR
+     ======================================================= */
+
   if (error) {
     return (
       <PageWrapper title="Crop Recommendations">
         {locationBar}
+
         <ErrorView message={error} />
       </PageWrapper>
     );
   }
+
+  /* =======================================================
+     EMPTY
+     ======================================================= */
 
   if (!data || data.length === 0) {
     return (
@@ -481,319 +592,392 @@ export default function RecommendationsPage() {
         {locationBar}
 
         <Card title="Recommendations">
-          <p className="text-stone-600">
-            {!state || !district
-              ? 'This farm does not have a complete location yet. Add or update the farm location to generate recommendations.'
-              : `No recommendations available for ${district}, ${state}${
-                  effectiveLocation.isSupported === false
-                    ? ' — this location has no forecast coverage yet.'
-                    : ' yet.'
-                }`}
-          </p>
+          <div className="py-8">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50">
+              <Leaf className="h-6 w-6 text-emerald-600" />
+            </div>
+
+            <p className="text-sm leading-6 text-stone-600">
+              {!state || !district
+                ? 'This farm does not have a complete location yet. Add or update the farm location to generate recommendations.'
+                : `No recommendations available for ${district}, ${state}${
+                    effectiveLocation.isSupported === false
+                      ? ' — this location has no forecast coverage yet.'
+                      : ' yet.'
+                  }`}
+            </p>
+          </div>
         </Card>
       </PageWrapper>
     );
   }
 
-  const top = data[0] as Recommendation;
-
-  const hasProfitablePick = top.expectedProfit > 0;
+  /* =======================================================
+     PAGE
+     ======================================================= */
 
   return (
     <PageWrapper title="Crop Recommendations">
-      {locationBar}
+      <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
 
-      <p className="text-sm text-stone-500 -mt-2 mb-2">
-        Ranked for {district}, {state} based on price trend
-        signals and MSP margins.
-      </p>
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
-      {!hasProfitablePick && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-
-          <span>
-            No crop currently shows a positive expected profit
-            for {district}, {state}. Showing the
-            least-unprofitable option below — treat this as a
-            caution, not a recommendation to plant.
-          </span>
-        </div>
-      )}
-
-      <Card
-        title={
-          hasProfitablePick
-            ? 'Top pick'
-            : 'Best available (no profitable option)'
-        }
-      >
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            {hasProfitablePick ? (
-              <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                <Sparkles size={12} />
-                AI recommended
-              </span>
-            ) : (
-              <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-                <AlertTriangle size={12} />
-                No profitable option
-              </span>
-            )}
-
-            <h4 className="text-2xl font-semibold text-stone-900">
-              {top.name}
-            </h4>
-
-            <p className="mt-1 text-sm text-stone-500">
-              {top.bestSeason ?? 'Any season'} ·{' '}
-              {top.growthDuration ?? '—'} day cycle
-            </p>
-          </div>
-
-          <div className="flex gap-8 text-right">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-stone-400">
-                Expected profit / acre
-              </div>
-
-              <div
-                className={`text-xl font-semibold ${
-                  hasProfitablePick
-                    ? 'text-emerald-700'
-                    : 'text-red-600'
-                }`}
-              >
-                ₹
-                {top.expectedProfit.toLocaleString(
-                  'en-IN'
-                )}
-              </div>
+        <div className="rounded-2xl border border-[#e2eadc] bg-[#f7faf4] px-5 py-5 sm:px-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e5f1dc]">
+              <Leaf className="h-6 w-6 text-[#27833f]" />
             </div>
 
             <div>
-              <div className="text-xs uppercase tracking-wide text-stone-400">
-                Forecast confidence
-              </div>
+              <h1 className="text-xl font-bold text-[#173b2a] sm:text-2xl">
+                Crop Recommendations
+              </h1>
 
-              <div className="text-xl font-semibold text-stone-800">
-                {Math.round(
-                  top.confidenceScore * 100
-                )}
-                %
-              </div>
-
-              {top.confidenceBand && (
-                <div className="mt-1">
-                  <ConfidenceBadge
-                    band={top.confidenceBand}
-                  />
-                </div>
-              )}
+              <p className="mt-1 text-sm leading-5 text-stone-500">
+                Crops that may be suitable for your
+                farm based on current conditions.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col items-start gap-3 border-t border-stone-100 pt-4">
-          <FullReasoningToggle
-            expanded={expandedCropIds.has(top.cropId)}
-            onToggle={() =>
-              toggleReasoning(top.cropId)
-            }
-            controlsId={`reasoning-${top.cropId}-top`}
-            cropName={top.name}
-          />
+        {/* =================================================
+            LOCATION
+        ================================================= */}
 
-          {expandedCropIds.has(top.cropId) && (
-            <div
-              id={`reasoning-${top.cropId}-top`}
-              className="w-full rounded-xl bg-stone-50 p-4"
+        {locationBar}
+
+        {/* =================================================
+            FILTERS
+        ================================================= */}
+
+        <div className="flex flex-wrap gap-3">
+
+          <div className="relative">
+            <select
+              defaultValue="recommended"
+              className="h-10 appearance-none rounded-xl border border-stone-200 bg-white px-4 pr-9 text-sm font-medium text-stone-700 outline-none transition focus:border-emerald-400"
             >
-              <ReasoningPanel rec={top} />
-            </div>
-          )}
+              <option value="recommended">
+                Recommended
+              </option>
+
+              <option value="profit">
+                Highest Profit
+              </option>
+
+              <option value="confidence">
+                Highest Confidence
+              </option>
+            </select>
+
+            <ChevronDown className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-stone-400" />
+          </div>
+
+          <div className="flex h-10 items-center rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-600">
+            Farm: <strong className="ml-1 text-stone-800">
+              {district}
+            </strong>
+          </div>
         </div>
-      </Card>
 
-      <Card title="Expected profit by crop">
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart
-            data={chartData}
-            margin={{
-              top: 8,
-              right: 16,
-              left: 8,
-              bottom: 0,
-            }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 5"
-              stroke="var(--line)"
-              vertical={false}
-            />
+        {/* =================================================
+            RECOMMENDATION CARDS
+        ================================================= */}
 
-            <XAxis
-              dataKey="name"
-              tick={{
-                fontSize: 11,
-                fill: 'var(--ink-soft)',
-              }}
-              axisLine={false}
-              tickLine={false}
-            />
+        <div className="grid gap-5 xl:grid-cols-2">
 
-            <YAxis
-              tick={{
-                fontSize: 11,
-                fill: 'var(--ink-soft)',
-              }}
-              axisLine={false}
-              tickLine={false}
-            />
+          {data.map((rec, index) => {
+            const confidence = Math.round(
+              rec.confidenceScore * 100,
+            );
 
-            <Tooltip
-              contentStyle={{
-                borderRadius: 12,
-                border: '1px solid var(--line)',
-                fontSize: 12.5,
-              }}
-              formatter={(v) => [
-                `₹${Number(v).toLocaleString('en-IN')}`,
-                'Expected profit',
-              ]}
-            />
+            /*
+             * The current Recommendation type does not
+             * expose separate demand/supply values.
+             * Until the backend provides those fields,
+             * the recommendation score is used as the
+             * visual indicator.
+             */
 
-            <Bar
-              dataKey="profit"
-              radius={[6, 6, 0, 0]}
-            >
-              {chartData.map((d, i) => (
-                <Cell
-                  key={d.name}
-                  fill={
-                    i === 0
-                      ? 'var(--forest-600)'
-                      : 'var(--sage-300)'
-                  }
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+            const demand = Math.min(
+              100,
+              Math.max(
+                0,
+                Math.round(rec.score),
+              ),
+            );
 
-      <Card title="All ranked recommendations">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-stone-200 text-stone-500">
-                <th className="pb-3 pr-4 font-medium">
-                  Rank
-                </th>
+            const supply = Math.min(
+              100,
+              Math.max(
+                0,
+                Math.round(rec.score * 0.95),
+              ),
+            );
 
-                <th className="pb-3 pr-4 font-medium">
-                  Crop
-                </th>
+            const trend =
+              rec.predictedTrend?.toLowerCase() ??
+              'stable';
 
-                <th className="pb-3 pr-4 font-medium">
-                  Score
-                </th>
+            const risk =
+              confidence >= 80
+                ? 'Low'
+                : confidence >= 65
+                  ? 'Medium'
+                  : 'High';
 
-                <th className="pb-3 pr-4 font-medium">
-                  Expected Profit
-                </th>
+            const riskClass =
+              risk === 'Low'
+                ? 'bg-emerald-50 text-emerald-700'
+                : risk === 'Medium'
+                  ? 'bg-amber-50 text-amber-700'
+                  : 'bg-red-50 text-red-700';
 
-                <th className="pb-3 pr-4 font-medium">
-                  Price Trend
-                </th>
+            const isExpanded =
+              expandedCropIds.has(rec.cropId);
 
-                <th className="pb-3 pr-4 font-medium">
-                  Reasoning
-                </th>
-              </tr>
-            </thead>
+            return (
+              <Fragment key={rec.cropId}>
 
-            <tbody>
-              {data.map((r, i) => {
-                const rowExpanded =
-                  expandedCropIds.has(r.cropId);
+                <div
+                  className={`overflow-hidden rounded-2xl border bg-white shadow-[0_5px_20px_rgba(20,49,42,0.05)] transition-all ${
+                    index === 0
+                      ? 'border-emerald-200'
+                      : 'border-stone-200'
+                  }`}
+                >
 
-                const rowPanelId =
-                  `reasoning-${r.cropId}-row`;
+                  {/* =========================================
+                      IMAGE + CROP HEADER
+                  ========================================= */}
 
-                return (
-                  <Fragment key={r.cropId}>
-                    <tr className="border-b border-stone-100">
-                      <td className="py-3 pr-4 text-stone-500">
-                        {i === 0 ? (
-                          hasProfitablePick ? (
-                            <Trophy className="h-4 w-4 text-amber-500" />
-                          ) : (
-                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <div className="relative h-44 overflow-hidden bg-[#eef4e8]">
+                    <img
+                      src={getCropImage(rec.name)}
+                      alt={rec.name}
+                      className="h-full w-full object-cover"
+                      onError={(event) => {
+                        const image =
+                          event.currentTarget;
+
+                        if (
+                          image.src.endsWith(
+                            DEFAULT_CROP_IMAGE,
                           )
-                        ) : (
-                          `#${i + 1}`
+                        ) {
+                          return;
+                        }
+
+                        image.src =
+                          DEFAULT_CROP_IMAGE;
+                      }}
+                    />
+
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent px-5 pb-4 pt-10">
+                      <div className="flex items-end justify-between gap-3">
+
+                        <div>
+                          <p className="text-xs font-medium text-white/80">
+                            {index === 0
+                              ? 'Best recommendation'
+                              : 'Recommended crop'}
+                          </p>
+
+                          <h2 className="mt-0.5 text-2xl font-bold text-white">
+                            {rec.name}
+                          </h2>
+                        </div>
+
+                        {index === 0 && (
+                          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-emerald-700">
+                            Recommended
+                          </span>
                         )}
-                      </td>
+                      </div>
+                    </div>
+                  </div>
 
-                      <td className="py-3 pr-4 font-medium text-stone-800">
-                        {r.name}
-                      </td>
+                  {/* =========================================
+                      CARD CONTENT
+                  ========================================= */}
 
-                      <td className="py-3 pr-4 text-stone-600">
-                        {r.score.toFixed(1)}
-                      </td>
+                  <div className="p-5">
 
-                      <td
-                        className={`py-3 pr-4 font-mono ${
-                          r.expectedProfit > 0
-                            ? 'text-stone-800'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        ₹
-                        {r.expectedProfit.toLocaleString(
-                          'en-IN'
-                        )}
-                      </td>
+                    {/* Profit + confidence */}
 
-                      <td className="py-3 pr-4">
-                        <TrendBadge
-                          trend={r.predictedTrend}
-                        />
-                      </td>
+                    <div className="grid grid-cols-2 gap-3">
 
-                      <td className="py-3 pr-4">
-                        <FullReasoningToggle
-                          expanded={rowExpanded}
-                          onToggle={() =>
-                            toggleReasoning(r.cropId)
-                          }
-                          controlsId={rowPanelId}
-                          cropName={r.name}
-                        />
-                      </td>
-                    </tr>
+                      <div className="rounded-xl bg-[#f6faf3] p-3.5">
+                        <p className="text-xs text-stone-500">
+                          Expected Profit
+                        </p>
 
-                    {rowExpanded && (
-                      <tr className="border-b border-stone-100">
-                        <td
-                          colSpan={6}
-                          className="bg-stone-50 px-4 py-4"
-                          id={rowPanelId}
+                        <p className="mt-1 text-lg font-bold text-[#173b2a]">
+                          ₹
+                          {rec.expectedProfit.toLocaleString(
+                            'en-IN',
+                          )}
+                        </p>
+
+                        <p className="text-[11px] text-stone-400">
+                          per acre
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-[#f5f8fc] p-3.5">
+                        <p className="text-xs text-stone-500">
+                          Confidence
+                        </p>
+
+                        <p className="mt-1 text-lg font-bold text-[#173b2a]">
+                          {confidence}%
+                        </p>
+
+                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-stone-200">
+                          <div
+                            className="h-full rounded-full bg-emerald-500"
+                            style={{
+                              width: `${confidence}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Why recommended */}
+
+                    <div className="mt-4 rounded-xl border border-[#e7eee2] bg-[#fbfdf9] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+                        Why this crop?
+                      </p>
+
+                      <p className="mt-1.5 text-sm leading-6 text-stone-700">
+                        {rec.reasoning?.summary ??
+                          'This crop is recommended based on the available market and farm conditions.'}
+                      </p>
+                    </div>
+
+                    {/* Stats */}
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+
+                      <div>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-xs text-stone-500">
+                            Demand
+                          </span>
+                        </div>
+
+                        <ProgressBar value={demand} />
+                      </div>
+
+                      <div>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-xs text-stone-500">
+                            Supply
+                          </span>
+                        </div>
+
+                        <ProgressBar value={supply} />
+                      </div>
+                    </div>
+
+                    {/* Trend + risk */}
+
+                    <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-4">
+
+                      <div>
+                        <p className="mb-1 text-[11px] uppercase tracking-wide text-stone-400">
+                          Price trend
+                        </p>
+
+                        <div className="text-sm font-semibold">
+                          <TrendIcon trend={trend} />
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="mb-1 text-[11px] uppercase tracking-wide text-stone-400">
+                          Risk
+                        </p>
+
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${riskClass}`}
                         >
-                          <ReasoningPanel rec={r} />
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                          {risk}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Details button */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleReasoning(
+                          rec.cropId,
+                        )
+                      }
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                    >
+                      {isExpanded
+                        ? 'Hide Details'
+                        : 'Why are we recommending this?'}
+
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${
+                          isExpanded
+                            ? 'rotate-180'
+                            : ''
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* =========================================
+                    EXPANDED DETAILS
+                ========================================= */}
+
+                {isExpanded && (
+                  <div className="xl:col-span-2 rounded-2xl border border-emerald-100 bg-[#f9fcf7] p-5">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Info className="h-4 w-4 text-emerald-600" />
+
+                      <h3 className="text-sm font-semibold text-[#173b2a]">
+                        More about {rec.name}
+                      </h3>
+                    </div>
+
+                    <ReasoningPanel rec={rec} />
+                  </div>
+                )}
+              </Fragment>
+            );
+          })}
         </div>
-      </Card>
+
+        {/* =================================================
+            FOOTER TIP
+        ================================================= */}
+
+        <div className="flex items-start gap-3 rounded-2xl border border-[#e1ead9] bg-[#f3f8ee] px-4 py-3.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white">
+            <Leaf className="h-4 w-4 text-emerald-600" />
+          </div>
+
+          <p className="text-sm leading-5 text-stone-600">
+            <span className="font-semibold text-stone-700">
+              Tip:
+            </span>{' '}
+            Profit values are estimated based on
+            current market trends and may vary.
+          </p>
+        </div>
+      </div>
     </PageWrapper>
   );
 }

@@ -8,7 +8,6 @@ import {
   FlaskConical,
   Leaf,
   MapPin,
-  PlusCircle,
   Sprout,
   ThermometerSun,
 } from 'lucide-react';
@@ -35,7 +34,14 @@ type FarmWithSoil = {
   ph?: number | null;
   soilPh?: number | null;
   soil_ph?: number | null;
+  name?: string;
+  state?: string;
+  district?: string;
 };
+
+/* =========================================================
+   FARM DATA
+========================================================= */
 
 function getSoilType(farm: FarmWithSoil): string {
   return farm.soilType ?? farm.soil_type ?? 'Unknown';
@@ -45,15 +51,10 @@ function getSoilPh(farm: FarmWithSoil): number | null {
   return farm.ph ?? farm.soilPh ?? farm.soil_ph ?? null;
 }
 
-/**
- * Local soil analysis fallback.
- *
- * This keeps the page functional when the backend does not yet expose
- * a dedicated soil-analysis endpoint.
- *
- * Replace this function with your soil API/dataService call when the
- * backend soil-analysis endpoint is available.
- */
+/* =========================================================
+   SOIL ANALYSIS
+========================================================= */
+
 function buildSoilAnalysis(farm: FarmWithSoil): SoilAnalysis {
   const soilType = getSoilType(farm);
   const farmPh = getSoilPh(farm);
@@ -150,215 +151,173 @@ function buildSoilAnalysis(farm: FarmWithSoil): SoilAnalysis {
   };
 }
 
-function getNutrientStatus(value: number): {
-  label: string;
-  className: string;
-} {
+/* =========================================================
+   STATUS
+========================================================= */
+
+function nutrientStatus(value: number) {
   if (value >= 60) {
     return {
       label: 'Good',
-      className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      className: 'bg-emerald-50 text-emerald-700',
     };
   }
 
   if (value >= 40) {
     return {
-      label: 'Moderate',
-      className: 'bg-amber-50 text-amber-700 border-amber-200',
+      label: 'Medium',
+      className: 'bg-amber-50 text-amber-700',
     };
   }
 
   return {
     label: 'Low',
-    className: 'bg-red-50 text-red-700 border-red-200',
+    className: 'bg-red-50 text-red-700',
   };
 }
 
-function getPhStatus(ph: number) {
+function phStatus(ph: number) {
   if (ph >= 6 && ph <= 7.5) {
     return {
-      label: 'Suitable',
-      className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    };
-  }
-
-  if (ph >= 5.5 && ph <= 8) {
-    return {
-      label: 'Acceptable',
-      className: 'bg-amber-50 text-amber-700 border-amber-200',
+      label: 'Good',
+      className: 'bg-emerald-50 text-emerald-700',
     };
   }
 
   return {
     label: 'Needs attention',
-    className: 'bg-red-50 text-red-700 border-red-200',
+    className: 'bg-amber-50 text-amber-700',
   };
 }
 
-function getMoistureStatus(moisture: number) {
-  if (moisture >= 45 && moisture <= 75) {
-    return {
-      label: 'Healthy',
-      className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    };
-  }
+/* =========================================================
+   HEALTH SCORE
+========================================================= */
 
-  if (moisture < 45) {
-    return {
-      label: 'Low',
-      className: 'bg-amber-50 text-amber-700 border-amber-200',
-    };
-  }
+function getHealthScore(analysis: SoilAnalysis): number {
+  const nutrientAverage =
+    (analysis.nitrogen +
+      analysis.phosphorus +
+      analysis.potassium) /
+    3;
 
-  return {
-    label: 'High',
-    className: 'bg-blue-50 text-blue-700 border-blue-200',
-  };
+  const phScore =
+    analysis.ph >= 6 && analysis.ph <= 7.5 ? 100 : 70;
+
+  const moistureScore =
+    analysis.moisture >= 45 && analysis.moisture <= 75
+      ? 100
+      : 70;
+
+  return Math.round(
+    nutrientAverage * 0.6 +
+      phScore * 0.2 +
+      moistureScore * 0.2,
+  );
 }
 
-function getOverallStatus(analysis: SoilAnalysis) {
-  const nutrientValues = [
-    analysis.nitrogen,
-    analysis.phosphorus,
-    analysis.potassium,
-  ];
+/* =========================================================
+   RECOMMENDATIONS
+========================================================= */
 
-  const nutrientScore =
-    nutrientValues.reduce((sum, value) => sum + value, 0) /
-    nutrientValues.length;
+function getRecommendations(analysis: SoilAnalysis) {
+  const recommendations: {
+    text: string;
+    type: 'good' | 'warning';
+  }[] = [];
 
-  const phGood = analysis.ph >= 6 && analysis.ph <= 7.5;
-  const moistureGood =
-    analysis.moisture >= 45 && analysis.moisture <= 75;
-
-  if (nutrientScore >= 60 && phGood && moistureGood) {
-    return {
-      label: 'Healthy soil',
-      description:
-        'The available soil indicators are generally favorable for crop cultivation.',
-      icon: CheckCircle2,
-      className:
-        'border-emerald-200 bg-emerald-50 text-emerald-800',
-    };
+  if (analysis.nitrogen >= 60) {
+    recommendations.push({
+      text: 'Maintain nitrogen level',
+      type: 'good',
+    });
+  } else {
+    recommendations.push({
+      text: 'Improve nitrogen level',
+      type: 'warning',
+    });
   }
 
-  if (nutrientScore >= 40 && (phGood || moistureGood)) {
-    return {
-      label: 'Moderate condition',
-      description:
-        'The soil is usable, but some indicators may benefit from management or monitoring.',
-      icon: AlertTriangle,
-      className:
-        'border-amber-200 bg-amber-50 text-amber-800',
-    };
+  if (analysis.phosphorus >= 60) {
+    recommendations.push({
+      text: 'Good phosphorus level',
+      type: 'good',
+    });
+  } else {
+    recommendations.push({
+      text: 'Check phosphorus level',
+      type: 'warning',
+    });
   }
 
-  return {
-    label: 'Needs attention',
-    description:
-      'Some soil indicators may require corrective management before cultivation.',
-    icon: AlertTriangle,
-    className:
-      'border-red-200 bg-red-50 text-red-800',
-  };
+  if (analysis.moisture >= 45 && analysis.moisture <= 75) {
+    recommendations.push({
+      text: 'Good soil moisture',
+      type: 'good',
+    });
+  } else {
+    recommendations.push({
+      text: 'Check irrigation',
+      type: 'warning',
+    });
+  }
+
+  if (analysis.ph >= 6 && analysis.ph <= 7.5) {
+    recommendations.push({
+      text: 'pH is suitable',
+      type: 'good',
+    });
+  } else {
+    recommendations.push({
+      text: 'Check soil pH',
+      type: 'warning',
+    });
+  }
+
+  return recommendations;
 }
+
+/* =========================================================
+   EMPTY FARM
+========================================================= */
 
 function EmptyFarmState() {
   return (
-    <Card title="Soil Analysis">
-      <div className="py-14 text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-          <MapPin className="h-8 w-8 text-emerald-600" />
-        </div>
-
-        <h2 className="text-xl font-semibold text-stone-800">
-          Add a farm to see soil analysis
-        </h2>
-
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-stone-500">
-          Soil analysis is specific to a farm. Add your first farm with its
-          location and soil information to view the analysis here.
-        </p>
-
-        <button
-          type="button"
-          onClick={() => {
-            window.dispatchEvent(new CustomEvent('open-add-farm'));
-          }}
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-800"
-        >
-          <PlusCircle className="h-4 w-4" />
-          Add your first farm
-        </button>
+    <div className="rounded-2xl border border-stone-200 bg-white p-10 text-center shadow-sm">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
+        <MapPin className="h-6 w-6 text-emerald-600" />
       </div>
-    </Card>
+
+      <h2 className="text-lg font-semibold text-stone-800">
+        Add a farm to see soil analysis
+      </h2>
+
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-500">
+        Add your farm location and details to view soil information.
+      </p>
+    </div>
   );
 }
 
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  status,
-}: {
-  icon: typeof Leaf;
-  label: string;
-  value: string | number;
-  unit?: string;
-  status?: {
-    label: string;
-    className: string;
-  };
-}) {
-  return (
-    <Card title="Soil Analysis">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-stone-500">{label}</p>
-
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-2xl font-semibold text-stone-800">
-              {value}
-            </span>
-
-            {unit && (
-              <span className="text-xs text-stone-500">
-                {unit}
-              </span>
-            )}
-          </div>
-
-          {status && (
-            <span
-              className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${status.className}`}
-            >
-              {status.label}
-            </span>
-          )}
-        </div>
-
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
-          <Icon className="h-5 w-5 text-emerald-600" />
-        </div>
-      </div>
-    </Card>
-  );
-}
+/* =========================================================
+   MAIN PAGE
+========================================================= */
 
 export default function SoilAnalysisPage() {
   const { activeFarm } = useAuth();
 
-  const [analysis, setAnalysis] = useState<SoilAnalysis | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [analysis, setAnalysis] =
+    useState<SoilAnalysis | null>(null);
 
-  /**
-   * Only calculate/load soil analysis when an active farm exists.
-   *
-   * This is the important part of the new behavior:
-   * no farm = no soil data.
-   */
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  /* -------------------------------------------------------
+     LOAD SOIL DATA
+  ------------------------------------------------------- */
+
   useEffect(() => {
     if (!activeFarm) {
       setAnalysis(null);
@@ -367,452 +326,521 @@ export default function SoilAnalysisPage() {
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
-    setAnalysis(null);
 
     try {
-      const soilAnalysis = buildSoilAnalysis(
-        activeFarm as FarmWithSoil
+      const result = buildSoilAnalysis(
+        activeFarm as FarmWithSoil,
       );
 
-      setAnalysis(soilAnalysis);
+      setAnalysis(result);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Unable to load soil analysis.'
+          : 'Unable to load soil analysis.',
       );
     } finally {
       setLoading(false);
     }
   }, [activeFarm]);
 
-  const overallStatus = useMemo(() => {
-    if (!analysis) return null;
-    return getOverallStatus(analysis);
+  /* -------------------------------------------------------
+     HEALTH SCORE
+  ------------------------------------------------------- */
+
+  const healthScore = useMemo(() => {
+    if (!analysis) return 0;
+
+    return getHealthScore(analysis);
   }, [analysis]);
+
+  /* -------------------------------------------------------
+     NO FARM
+  ------------------------------------------------------- */
 
   if (!activeFarm) {
     return (
-      <PageWrapper title="Soil Analysis">
-        <EmptyFarmState />
+      <PageWrapper
+        title="Soil Analysis"
+        subtitle="Detailed soil health analysis of your farm."
+      >
+        <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
+          <EmptyFarmState />
+        </div>
       </PageWrapper>
     );
   }
+
+  /* -------------------------------------------------------
+     LOADING
+  ------------------------------------------------------- */
 
   if (loading) {
     return (
-      <PageWrapper title="Soil Analysis">
-        <Loading />
+      <PageWrapper
+        title="Soil Analysis"
+        subtitle="Detailed soil health analysis of your farm."
+      >
+        <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
+          <Loading />
+        </div>
       </PageWrapper>
     );
   }
+
+  /* -------------------------------------------------------
+     ERROR
+  ------------------------------------------------------- */
 
   if (error) {
     return (
-      <PageWrapper title="Soil Analysis">
-        <ErrorView message={error} />
+      <PageWrapper
+        title="Soil Analysis"
+        subtitle="Detailed soil health analysis of your farm."
+      >
+        <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
+          <ErrorView message={error} />
+        </div>
       </PageWrapper>
     );
   }
 
-  if (!analysis || !overallStatus) {
-    return (
-      <PageWrapper title="Soil Analysis">
-        <Card title="Soil Analysis">
-          <div className="py-10 text-center">
-            <p className="text-sm text-stone-500">
-              No soil analysis is available for this farm yet.
-            </p>
-          </div>
-        </Card>
-      </PageWrapper>
-    );
+  if (!analysis) {
+    return null;
   }
 
-  const StatusIcon = overallStatus.icon;
+  /* -------------------------------------------------------
+     STATUS VALUES
+  ------------------------------------------------------- */
 
-  const phStatus = getPhStatus(analysis.ph);
-  const moistureStatus = getMoistureStatus(analysis.moisture);
-  const nitrogenStatus = getNutrientStatus(analysis.nitrogen);
-  const phosphorusStatus = getNutrientStatus(analysis.phosphorus);
-  const potassiumStatus = getNutrientStatus(analysis.potassium);
+  const ph = phStatus(analysis.ph);
+
+  const nitrogen = nutrientStatus(
+    analysis.nitrogen,
+  );
+
+  const phosphorus = nutrientStatus(
+    analysis.phosphorus,
+  );
+
+  const potassium = nutrientStatus(
+    analysis.potassium,
+  );
+
+  const recommendations =
+    getRecommendations(analysis);
+
+  const farm = activeFarm as FarmWithSoil;
 
   const farmName =
-    (activeFarm as FarmWithSoil & { name?: string }).name ??
-    'Active farm';
+    farm.name ?? 'Your Farm';
 
-  const farmState =
-    (activeFarm as FarmWithSoil & { state?: string }).state;
+  const farmLocation = [
+    farm.district,
+    farm.state,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
-  const farmDistrict =
-    (activeFarm as FarmWithSoil & { district?: string }).district;
+  /* -------------------------------------------------------
+     PAGE
+  ------------------------------------------------------- */
 
   return (
-    <PageWrapper title="Soil Analysis">
-      {/* Farm context */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100">
-            <MapPin className="h-4 w-4 text-emerald-700" />
-          </div>
+    <PageWrapper
+      title="Soil Analysis"
+      subtitle="Detailed soil health analysis of your farm."
+    >
+      <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
 
-          <div>
-            <p className="text-xs text-stone-500">
-              Soil analysis for
-            </p>
+        {/* FARM INFO */}
 
-            <p className="text-sm font-semibold text-stone-800">
-              {farmName}
-            </p>
-          </div>
-        </div>
+        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--sage-100)]">
+              <MapPin className="h-5 w-5 text-[var(--forest-600)]" />
+            </div>
 
-        {(farmDistrict || farmState) && (
-          <p className="text-sm text-stone-500">
-            {[farmDistrict, farmState].filter(Boolean).join(', ')}
-          </p>
-        )}
-      </div>
+            <div>
+              <p className="text-xs text-stone-400">
+                Soil analysis for
+              </p>
 
-      {/* Overall condition */}
-      <div
-        className={`mb-6 rounded-xl border px-5 py-4 ${overallStatus.className}`}
-      >
-        <div className="flex items-start gap-3">
-          <StatusIcon className="mt-0.5 h-5 w-5 shrink-0" />
-
-          <div>
-            <h2 className="font-semibold">
-              {overallStatus.label}
-            </h2>
-
-            <p className="mt-1 text-sm opacity-80">
-              {overallStatus.description}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Soil overview */}
-      <Card title="Soil Overview">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
-              Soil type
-            </p>
-
-            <div className="mt-2 flex items-center gap-2">
-              <Sprout className="h-4 w-4 text-emerald-600" />
-              <p className="font-semibold text-stone-800">
-                {analysis.soilType}
+              <p className="text-sm font-semibold text-stone-800">
+                {farmName}
               </p>
             </div>
           </div>
 
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
-              pH
+          {farmLocation && (
+            <p className="text-sm text-stone-500">
+              {farmLocation}
             </p>
+          )}
+        </div>
 
-            <div className="mt-2 flex items-center gap-2">
-              <FlaskConical className="h-4 w-4 text-emerald-600" />
-              <p className="font-semibold text-stone-800">
-                {analysis.ph.toFixed(1)}
+        {/* TOP CARDS */}
+
+        <div className="grid gap-5 lg:grid-cols-3">
+
+          {/* SOIL HEALTH */}
+
+          <Card title="Soil Health Score">
+            <div className="flex min-h-[190px] flex-col items-center justify-center">
+
+              <div className="relative flex h-28 w-28 items-center justify-center rounded-full border-[6px] border-emerald-100">
+                <div className="absolute inset-1 rounded-full border-[5px] border-emerald-500" />
+
+                <div className="relative text-center">
+                  <p className="text-3xl font-bold text-emerald-700">
+                    {healthScore}
+                  </p>
+
+                  <p className="text-xs font-medium text-emerald-600">
+                    Good
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-4 text-sm font-semibold text-stone-800">
+                Overall Soil Health
               </p>
 
-              <span
-                className={`rounded-full border px-2 py-0.5 text-xs ${phStatus.className}`}
-              >
-                {phStatus.label}
+              <p className="mt-1 max-w-[210px] text-center text-xs leading-5 text-stone-500">
+                Your soil indicators are generally
+                suitable for cultivation.
+              </p>
+            </div>
+          </Card>
+
+          {/* NUTRIENTS */}
+
+          <Card title="Nutrient Status">
+            <div className="space-y-4 py-1">
+
+              <NutrientRow
+                label="pH"
+                value={analysis.ph.toFixed(1)}
+                status={ph}
+              />
+
+              <NutrientRow
+                label="Nitrogen (N)"
+                value={`${analysis.nitrogen} index`}
+                status={nitrogen}
+              />
+
+              <NutrientRow
+                label="Phosphorus (P)"
+                value={`${analysis.phosphorus} index`}
+                status={phosphorus}
+              />
+
+              <NutrientRow
+                label="Potassium (K)"
+                value={`${analysis.potassium} index`}
+                status={potassium}
+              />
+
+              <NutrientRow
+                label="Organic Carbon"
+                value={`${analysis.organicMatter.toFixed(1)}%`}
+                status={{
+                  label:
+                    analysis.organicMatter >= 1.5
+                      ? 'Good'
+                      : 'Medium',
+                  className:
+                    analysis.organicMatter >= 1.5
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-amber-50 text-amber-700',
+                }}
+              />
+
+            </div>
+          </Card>
+
+          {/* SOIL TYPE */}
+
+          <Card title="Soil Type">
+            <div className="flex min-h-[190px] flex-col justify-between">
+
+              <div className="flex items-start justify-between gap-4">
+
+                <div>
+                  <p className="text-xl font-bold text-stone-800">
+                    {analysis.soilType}
+                  </p>
+
+                  <p className="mt-2 max-w-[180px] text-xs leading-5 text-stone-500">
+                    Soil type based on your farm
+                    information.
+                  </p>
+                </div>
+
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-amber-50">
+                  <FlaskConical className="h-7 w-7 text-amber-600" />
+                </div>
+
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+
+                <div className="rounded-lg bg-stone-50 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-stone-400">
+                    pH
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold text-stone-800">
+                    {analysis.ph.toFixed(1)}
+                  </p>
+                </div>
+
+                <div className="rounded-lg bg-stone-50 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-stone-400">
+                    Drainage
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold text-stone-800">
+                    {analysis.drainage}
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </Card>
+
+        </div>
+
+        {/* SECOND ROW */}
+
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+
+          {/* MOISTURE */}
+
+          <Card title="Soil Moisture">
+            <div className="flex items-center justify-between">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50">
+                  <Droplets className="h-5 w-5 text-blue-600" />
+                </div>
+
+                <div>
+                  <p className="text-xs text-stone-500">
+                    Current moisture level
+                  </p>
+
+                  <p className="mt-1 text-2xl font-bold text-stone-800">
+                    {analysis.moisture}%
+                  </p>
+                </div>
+
+              </div>
+
+              <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+                {analysis.moisture >= 45 &&
+                analysis.moisture <= 75
+                  ? 'Good'
+                  : 'Check'}
               </span>
+
             </div>
-          </div>
 
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
-              Drainage
-            </p>
-
-            <div className="mt-2 flex items-center gap-2">
-              <Droplets className="h-4 w-4 text-emerald-600" />
-              <p className="font-semibold text-stone-800">
-                {analysis.drainage}
-              </p>
+            <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-stone-100">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(
+                      0,
+                      analysis.moisture,
+                    ),
+                  )}%`,
+                }}
+              />
             </div>
-          </div>
 
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
-              Organic matter
-            </p>
-
-            <div className="mt-2 flex items-center gap-2">
-              <Leaf className="h-4 w-4 text-emerald-600" />
-              <p className="font-semibold text-stone-800">
-                {analysis.organicMatter.toFixed(1)}%
-              </p>
+            <div className="mt-2 flex justify-between text-[10px] text-stone-400">
+              <span>Dry</span>
+              <span>Healthy range</span>
+              <span>Wet</span>
             </div>
-          </div>
+          </Card>
+
+          {/* QUICK SUMMARY */}
+
+          <Card title="Quick Summary">
+            <div className="grid grid-cols-2 gap-3">
+
+              <SummaryItem
+                icon={Sprout}
+                label="Nitrogen"
+                value={nitrogen.label}
+              />
+
+              <SummaryItem
+                icon={FlaskConical}
+                label="Phosphorus"
+                value={phosphorus.label}
+              />
+
+              <SummaryItem
+                icon={Leaf}
+                label="Potassium"
+                value={potassium.label}
+              />
+
+              <SummaryItem
+                icon={Droplets}
+                label="Drainage"
+                value={analysis.drainage}
+              />
+
+            </div>
+          </Card>
+
         </div>
-      </Card>
 
-      {/* Nutrient metrics */}
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <MetricCard
-          icon={Leaf}
-          label="Nitrogen"
-          value={analysis.nitrogen}
-          unit="index"
-          status={nitrogenStatus}
-        />
+        {/* RECOMMENDATIONS */}
 
-        <MetricCard
-          icon={Sprout}
-          label="Phosphorus"
-          value={analysis.phosphorus}
-          unit="index"
-          status={phosphorusStatus}
-        />
+        <div className="mt-5">
 
-        <MetricCard
-          icon={Leaf}
-          label="Potassium"
-          value={analysis.potassium}
-          unit="index"
-          status={potassiumStatus}
-        />
-      </div>
+          <Card title="Recommendations">
 
-      {/* Moisture */}
-      <div className="mt-6">
-        <Card title="Soil Moisture">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50">
-                <Droplets className="h-5 w-5 text-blue-600" />
-              </div>
+            <div className="flex flex-wrap gap-3">
 
-              <div>
-                <p className="text-sm text-stone-500">
-                  Current moisture level
-                </p>
+              {recommendations.map(
+                (recommendation, index) => (
+                  <div
+                    key={`${recommendation.text}-${index}`}
+                    className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium ${
+                      recommendation.type === 'good'
+                        ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
+                        : 'border-amber-100 bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {recommendation.type === 'good' ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    )}
 
-                <p className="mt-1 text-2xl font-semibold text-stone-800">
-                  {analysis.moisture}%
-                </p>
-              </div>
+                    {recommendation.text}
+                  </div>
+                ),
+              )}
+
             </div>
 
-            <span
-              className={`self-start rounded-full border px-3 py-1.5 text-xs font-medium md:self-center ${moistureStatus.className}`}
-            >
-              {moistureStatus.label}
-            </span>
+          </Card>
+
+        </div>
+
+        {/* TIP */}
+
+        <div className="mt-5 rounded-xl border border-[#e1eadc] bg-[#f5f8f0] px-5 py-3.5">
+
+          <div className="flex items-center gap-3">
+
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white">
+              <ThermometerSun className="h-4 w-4 text-[var(--forest-600)]" />
+            </div>
+
+            <p className="text-xs text-stone-600">
+              <span className="font-semibold text-[var(--forest-900)]">
+                Tip:
+              </span>{' '}
+              Keep your soil information updated to
+              get better crop recommendations.
+            </p>
+
           </div>
 
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-stone-100">
-            <div
-              className="h-full rounded-full bg-emerald-600 transition-all"
-              style={{
-                width: `${Math.min(
-                  100,
-                  Math.max(0, analysis.moisture)
-                )}%`,
-              }}
-            />
-          </div>
+        </div>
 
-          <div className="mt-2 flex justify-between text-xs text-stone-400">
-            <span>Dry</span>
-            <span>Optimal range</span>
-            <span>Wet</span>
-          </div>
-        </Card>
-      </div>
-
-      {/* Soil indicators */}
-      <div className="mt-6">
-        <Card title="Soil Indicators">
-          <div className="space-y-5">
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-stone-700">
-                  Nitrogen
-                </span>
-                <span className="text-sm text-stone-500">
-                  {analysis.nitrogen}
-                </span>
-              </div>
-
-              <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-                <div
-                  className="h-full rounded-full bg-emerald-600"
-                  style={{
-                    width: `${Math.min(100, analysis.nitrogen)}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-stone-700">
-                  Phosphorus
-                </span>
-                <span className="text-sm text-stone-500">
-                  {analysis.phosphorus}
-                </span>
-              </div>
-
-              <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-                <div
-                  className="h-full rounded-full bg-emerald-600"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      analysis.phosphorus
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-stone-700">
-                  Potassium
-                </span>
-                <span className="text-sm text-stone-500">
-                  {analysis.potassium}
-                </span>
-              </div>
-
-              <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-                <div
-                  className="h-full rounded-full bg-emerald-600"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      analysis.potassium
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-stone-700">
-                  Organic matter
-                </span>
-                <span className="text-sm text-stone-500">
-                  {analysis.organicMatter.toFixed(1)}%
-                </span>
-              </div>
-
-              <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-                <div
-                  className="h-full rounded-full bg-emerald-600"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      analysis.organicMatter * 25
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Recommendations */}
-      <div className="mt-6">
-        <Card title="Soil Management Notes">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
-              <div className="flex gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
-                  <Leaf className="h-4 w-4 text-emerald-600" />
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-stone-800">
-                    Nutrient management
-                  </h3>
-
-                  <p className="mt-1 text-sm leading-5 text-stone-500">
-                    Monitor nitrogen, phosphorus and potassium levels
-                    when planning the next cultivation cycle.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
-              <div className="flex gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-                  <Droplets className="h-4 w-4 text-blue-600" />
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-stone-800">
-                    Water management
-                  </h3>
-
-                  <p className="mt-1 text-sm leading-5 text-stone-500">
-                    Consider the moisture level and drainage
-                    characteristics when planning irrigation.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
-              <div className="flex gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50">
-                  <FlaskConical className="h-4 w-4 text-amber-600" />
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-stone-800">
-                    pH management
-                  </h3>
-
-                  <p className="mt-1 text-sm leading-5 text-stone-500">
-                    The soil pH is {analysis.ph.toFixed(1)}. Keep
-                    monitoring pH when selecting crops and planning
-                    soil amendments.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
-              <div className="flex gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50">
-                  <ThermometerSun className="h-4 w-4 text-orange-600" />
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-stone-800">
-                    Crop planning
-                  </h3>
-
-                  <p className="mt-1 text-sm leading-5 text-stone-500">
-                    Use these soil indicators together with market,
-                    weather and crop suitability information when
-                    making cultivation decisions.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
       </div>
     </PageWrapper>
+  );
+}
+
+/* =========================================================
+   NUTRIENT ROW
+========================================================= */
+
+function NutrientRow({
+  label,
+  value,
+  status,
+}: {
+  label: string;
+  value: string;
+  status: {
+    label: string;
+    className: string;
+  };
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+
+      <span className="text-xs font-medium text-stone-700">
+        {label}
+      </span>
+
+      <div className="flex items-center gap-2">
+
+        <span className="text-xs text-stone-500">
+          {value}
+        </span>
+
+        <span
+          className={`rounded-md px-2 py-1 text-[10px] font-medium ${status.className}`}
+        >
+          {status.label}
+        </span>
+
+      </div>
+
+    </div>
+  );
+}
+
+/* =========================================================
+   SUMMARY ITEM
+========================================================= */
+
+function SummaryItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Sprout;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-stone-100 bg-stone-50 p-3">
+
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white">
+        <Icon className="h-4 w-4 text-[var(--forest-600)]" />
+      </div>
+
+      <div className="min-w-0">
+
+        <p className="text-[10px] text-stone-400">
+          {label}
+        </p>
+
+        <p className="truncate text-xs font-semibold text-stone-700">
+          {value}
+        </p>
+
+      </div>
+
+    </div>
   );
 }
