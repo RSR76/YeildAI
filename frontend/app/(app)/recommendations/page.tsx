@@ -618,7 +618,7 @@ export default function RecommendationsPage() {
 
   return (
     <PageWrapper title="Crop Recommendations">
-      <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
+      <div className="space-y-6">
 
         {/* =================================================
             HEADER

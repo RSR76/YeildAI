@@ -39,7 +39,7 @@ export default function SignupPage() {
     try {
       await signup(email, password, name, role);
 
-      router.push(role === 'ADMIN' ? '/admin' : '/dashboard');
+      router.push(role === 'ADMIN' ? '/admin' : '/farm-select');
     } catch (err) {
       setError(
         err instanceof Error
