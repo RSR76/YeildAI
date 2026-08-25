@@ -187,22 +187,9 @@ export default function YieldPredictionPage() {
   const yMax = Math.ceil(maxYield + 5);
 
   return (
-    <PageWrapper title="Yield Prediction">
-      <div className="space-y-6 px-5 pb-10 pt-4 sm:px-8 lg:px-10">
-        {/* Header */}
-        <div className="-mt-4">
-          <p className="text-sm text-stone-500">
-            Projected yield based on your farm profile ({farmName}) and seasonal
-            conditions.
-          </p>
-
-          {location && (
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-stone-400">
-              <MapPin className="h-3.5 w-3.5" />
-              {location}
-            </div>
-          )}
-        </div>
+    <PageWrapper title="Yield Prediction" subtitle="Projected yield based on your farm profile and seasonal conditions.">
+      <div className="space-y-6">
+        
 
         {/* Current Yield Prediction */}
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">

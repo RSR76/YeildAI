@@ -588,7 +588,7 @@ export default function RecommendationsPage() {
 
   if (!data || data.length === 0) {
     return (
-      <PageWrapper title="Crop Recommendations">
+      <PageWrapper title="Crop Recommendations" subtitle="Crops that may be suitable for your farm based on current conditions.">
         {locationBar}
 
         <Card title="Recommendations">
@@ -617,31 +617,8 @@ export default function RecommendationsPage() {
      ======================================================= */
 
   return (
-    <PageWrapper title="Crop Recommendations">
+    <PageWrapper title="Crop Recommendations" subtitle="Crops that may be suitable for your farm based on current conditions.">
       <div className="space-y-6">
-
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
-        <div className="rounded-2xl border border-[#e2eadc] bg-[#f7faf4] px-5 py-5 sm:px-6">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e5f1dc]">
-              <Leaf className="h-6 w-6 text-[#27833f]" />
-            </div>
-
-            <div>
-              <h1 className="text-xl font-bold text-[#173b2a] sm:text-2xl">
-                Crop Recommendations
-              </h1>
-
-              <p className="mt-1 text-sm leading-5 text-stone-500">
-                Crops that may be suitable for your
-                farm based on current conditions.
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* =================================================
             LOCATION

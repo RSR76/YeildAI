@@ -13,6 +13,7 @@ import type React from 'react';
 import { getStoredToken, setStoredToken } from '@/lib/api';
 import * as authClient from './authClient';
 import { GUEST_DEMO_FARMS } from '@/lib/guestData';
+
 import type {
     AuthUser,
     FarmProfile,
@@ -22,28 +23,26 @@ import type {
 } from './types';
 
 const GUEST_STORAGE_KEY = 'agri.guestMode';
+const GUEST_FARMS_KEY = 'agri.guestFarms';
 
 interface AuthContextValue {
     user: AuthUser | null;
     farms: FarmProfile[];
     activeFarm: FarmProfile | null;
 
-    /** True while the initial session is being restored. */
     isLoading: boolean;
-
     isAuthenticated: boolean;
 
-    /** Role helpers for Admin/Farmer UI. */
     isAdmin: boolean;
     isFarmer: boolean;
 
-    /** True when browsing the public read-only demo. */
     isGuest: boolean;
-
-    /** Unified persona value: ADMIN, FARMER, or GUEST. */
     persona: Persona | null;
 
-    login: (email: string, password: string) => Promise<void>;
+    login: (
+        email: string,
+        password: string
+    ) => Promise<void>;
 
     signup: (
         email: string,
@@ -57,98 +56,204 @@ interface AuthContextValue {
     enterGuestMode: () => void;
     exitGuestMode: () => void;
 
-    switchFarm: (farmId: string) => Promise<void>;
+    switchFarm: (
+        farmId: string
+    ) => Promise<void>;
 
-    addFarm: (input: CreateFarmInput) => Promise<FarmProfile>;
+    addFarm: (
+        input: CreateFarmInput
+    ) => Promise<FarmProfile>;
 
     editFarm: (
         farmId: string,
         input: Partial<CreateFarmInput>
     ) => Promise<FarmProfile>;
 
-    removeFarm: (farmId: string) => Promise<void>;
+    removeFarm: (
+        farmId: string
+    ) => Promise<void>;
 
     refreshFarms: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext =
+    createContext<AuthContextValue | undefined>(
+        undefined
+    );
 
 export function AuthProvider({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const [user, setUser] = useState<AuthUser | null>(null);
-    const [farms, setFarms] = useState<FarmProfile[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isGuest, setIsGuest] = useState(false);
+    const [user, setUser] =
+        useState<AuthUser | null>(null);
 
-    const loadSession = useCallback(async () => {
-        const token = getStoredToken();
+    const [farms, setFarms] =
+        useState<FarmProfile[]>([]);
 
-        if (!token) {
-            // No authentication token. Check whether a guest session exists.
-            if (
-                typeof window !== 'undefined' &&
-                window.sessionStorage.getItem(GUEST_STORAGE_KEY) === '1'
-            ) {
-                setIsGuest(true);
-                setFarms(GUEST_DEMO_FARMS);
+    const [isLoading, setIsLoading] =
+        useState(true);
+
+    const [isGuest, setIsGuest] =
+        useState(false);
+
+    /*
+     * Restore the guest farms saved in sessionStorage.
+     *
+     * This means:
+     * - demo farm survives page navigation
+     * - guest-created farms survive refreshes
+     * - nothing is written to PostgreSQL
+     */
+    const getStoredGuestFarms =
+        useCallback((): FarmProfile[] => {
+            if (typeof window === 'undefined') {
+                return GUEST_DEMO_FARMS;
             }
 
-            setIsLoading(false);
-            return;
-        }
+            const stored =
+                window.sessionStorage.getItem(
+                    GUEST_FARMS_KEY
+                );
 
-        try {
-            const [me, farmList] = await Promise.all([
-                authClient.getMe(),
-                authClient.listFarms(),
-            ]);
+            if (!stored) {
+                return GUEST_DEMO_FARMS;
+            }
 
-            setUser(me);
-            setFarms(farmList);
-            setIsGuest(false);
-        } catch {
-            // Token is invalid or expired.
-            setStoredToken(null);
-            setUser(null);
-            setFarms([]);
-            setIsGuest(false);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+            try {
+                const parsed =
+                    JSON.parse(stored);
+
+                if (Array.isArray(parsed)) {
+                    return parsed;
+                }
+            } catch {
+                // Ignore invalid session data.
+            }
+
+            return GUEST_DEMO_FARMS;
+        }, []);
+
+    const saveGuestFarms = useCallback(
+        (nextFarms: FarmProfile[]) => {
+            if (
+                typeof window !== 'undefined'
+            ) {
+                window.sessionStorage.setItem(
+                    GUEST_FARMS_KEY,
+                    JSON.stringify(nextFarms)
+                );
+            }
+
+            setFarms(nextFarms);
+        },
+        []
+    );
+
+    const loadSession =
+        useCallback(async () => {
+            const token = getStoredToken();
+
+            if (!token) {
+                if (
+                    typeof window !==
+                    'undefined' &&
+                    window.sessionStorage.getItem(
+                        GUEST_STORAGE_KEY
+                    ) === '1'
+                ) {
+                    setIsGuest(true);
+
+                    setFarms(
+                        getStoredGuestFarms()
+                    );
+                }
+
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                const [
+                    me,
+                    farmList,
+                ] = await Promise.all([
+                    authClient.getMe(),
+                    authClient.listFarms(),
+                ]);
+
+                setUser(me);
+                setFarms(farmList);
+                setIsGuest(false);
+            } catch {
+                setStoredToken(null);
+                setUser(null);
+                setFarms([]);
+                setIsGuest(false);
+            } finally {
+                setIsLoading(false);
+            }
+        }, [getStoredGuestFarms]);
 
     useEffect(() => {
-        // Restore the authentication/guest session when the provider mounts.
         // eslint-disable-next-line react-hooks/set-state-in-effect
         loadSession();
     }, [loadSession]);
 
-    const enterGuestMode = useCallback(() => {
-        // Guest and authenticated sessions are mutually exclusive.
-        setStoredToken(null);
-        setUser(null);
-        setFarms(GUEST_DEMO_FARMS);
+    /*
+     * ENTER GUEST MODE
+     */
+    const enterGuestMode =
+        useCallback(() => {
+            setStoredToken(null);
+            setUser(null);
 
-        if (typeof window !== 'undefined') {
-            window.sessionStorage.setItem(GUEST_STORAGE_KEY, '1');
-        }
+            const guestFarms =
+                getStoredGuestFarms();
 
-        setIsGuest(true);
-    }, []);
+            setFarms(guestFarms);
 
-    const exitGuestMode = useCallback(() => {
-        if (typeof window !== 'undefined') {
-            window.sessionStorage.removeItem(GUEST_STORAGE_KEY);
-        }
+            if (
+                typeof window !== 'undefined'
+            ) {
+                window.sessionStorage.setItem(
+                    GUEST_STORAGE_KEY,
+                    '1'
+                );
+            }
 
-        setIsGuest(false);
-    }, []);
+            setIsGuest(true);
+        }, [getStoredGuestFarms]);
 
+    /*
+     * EXIT GUEST MODE
+     */
+    const exitGuestMode =
+        useCallback(() => {
+            if (
+                typeof window !== 'undefined'
+            ) {
+                window.sessionStorage.removeItem(
+                    GUEST_STORAGE_KEY
+                );
+
+                window.sessionStorage.removeItem(
+                    GUEST_FARMS_KEY
+                );
+            }
+
+            setIsGuest(false);
+        }, []);
+
+    /*
+     * LOGIN
+     */
     const login = useCallback(
-        async (email: string, password: string) => {
+        async (
+            email: string,
+            password: string
+        ) => {
             const {
                 token,
                 user: loggedInUser,
@@ -161,11 +266,17 @@ export function AuthProvider({
 
             setStoredToken(token);
             setUser(loggedInUser);
-            setFarms(await authClient.listFarms());
+
+            setFarms(
+                await authClient.listFarms()
+            );
         },
         [exitGuestMode]
     );
 
+    /*
+     * SIGNUP
+     */
     const signup = useCallback(
         async (
             email: string,
@@ -188,118 +299,339 @@ export function AuthProvider({
             setStoredToken(token);
             setUser(newUser);
 
-            // New accounts may not have any farms yet.
-            setFarms(await authClient.listFarms());
+            setFarms(
+                await authClient.listFarms()
+            );
         },
         [exitGuestMode]
     );
 
+    /*
+     * LOGOUT
+     */
     const logout = useCallback(() => {
         setStoredToken(null);
         setUser(null);
         setFarms([]);
         setIsGuest(false);
 
-        if (typeof window !== 'undefined') {
-            window.sessionStorage.removeItem(GUEST_STORAGE_KEY);
+        if (
+            typeof window !== 'undefined'
+        ) {
+            window.sessionStorage.removeItem(
+                GUEST_STORAGE_KEY
+            );
+
+            window.sessionStorage.removeItem(
+                GUEST_FARMS_KEY
+            );
         }
     }, []);
 
-    const refreshFarms = useCallback(async () => {
-        if (isGuest) {
-            return;
-        }
-
-        setFarms(await authClient.listFarms());
-    }, [isGuest]);
-
-    const GUEST_WRITE_ERROR =
-        'Sign up to save changes — guest mode is read-only.';
-
-    const switchFarm = useCallback(
-        async (farmId: string) => {
+    /*
+     * REFRESH FARMS
+     */
+    const refreshFarms =
+        useCallback(async () => {
             if (isGuest) {
-                throw new Error(GUEST_WRITE_ERROR);
+                setFarms(
+                    getStoredGuestFarms()
+                );
+
+                return;
             }
 
-            const updated = await authClient.activateFarm(farmId);
-
-            setFarms((prev) =>
-                prev.map((farm) => ({
-                    ...farm,
-                    isDefault: farm.id === updated.id,
-                }))
+            setFarms(
+                await authClient.listFarms()
             );
-        },
-        [isGuest]
-    );
+        }, [
+            isGuest,
+            getStoredGuestFarms,
+        ]);
 
-    const addFarm = useCallback(
-        async (input: CreateFarmInput) => {
-            if (isGuest) {
-                throw new Error(GUEST_WRITE_ERROR);
-            }
+    /*
+     * SWITCH FARM
+     */
+    const switchFarm =
+        useCallback(
+            async (farmId: string) => {
+                /*
+                 * Guest farm switching happens locally.
+                 */
+                if (isGuest) {
+                    const currentFarms =
+                        getStoredGuestFarms();
 
-            const farm = await authClient.createFarm(input);
+                    const updated =
+                        currentFarms.map(
+                            (farm) => ({
+                                ...farm,
+                                isDefault:
+                                    farm.id ===
+                                    farmId,
+                            })
+                        );
 
-            await refreshFarms();
+                    saveGuestFarms(
+                        updated
+                    );
 
-            return farm;
-        },
-        [isGuest, refreshFarms]
-    );
+                    return;
+                }
 
-    const editFarm = useCallback(
-        async (
-            farmId: string,
-            input: Partial<CreateFarmInput>
-        ) => {
-            if (isGuest) {
-                throw new Error(GUEST_WRITE_ERROR);
-            }
+                /*
+                 * Authenticated users use backend.
+                 */
+                const updated =
+                    await authClient.activateFarm(
+                        farmId
+                    );
 
-            const farm = await authClient.updateFarm(
-                farmId,
-                input
-            );
+                setFarms((prev) =>
+                    prev.map(
+                        (farm) => ({
+                            ...farm,
+                            isDefault:
+                                farm.id ===
+                                updated.id,
+                        })
+                    )
+                );
+            },
+            [
+                isGuest,
+                getStoredGuestFarms,
+                saveGuestFarms,
+            ]
+        );
 
-            setFarms((prev) =>
-                prev.map((existingFarm) =>
-                    existingFarm.id === farmId
-                        ? farm
-                        : existingFarm
-                )
-            );
+    /*
+     * ADD FARM
+     */
+    const addFarm =
+        useCallback(
+            async (
+                input: CreateFarmInput
+            ): Promise<FarmProfile> => {
+                /*
+                 * GUEST:
+                 * Create a local farm.
+                 */
+                if (isGuest) {
+                    const newFarm: FarmProfile = {
+                      ...GUEST_DEMO_FARMS[0],
+                      id: `guest-farm-${Date.now()}`,
+                      name: input.name,
+                      location: input.location,
+                      address: input.address ?? '',
+                      latitude: input.latitude,
+                      longitude: input.longitude,
+                      state: input.state,
+                      district: input.district,
+                      pincode: input.pincode,
+                      sizeAcres: input.sizeAcres,
+                      soilType: input.soilType ?? 'Black soil',
+                      crops: input.crops ?? [],
+                      irrigation: input.irrigation ?? 'Drip',
+                      isDefault: true,
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                    };
+                  
+                    setFarms([newFarm]);
+                  
+                    return newFarm;
+                  }
 
-            return farm;
-        },
-        [isGuest]
-    );
+                /*
+                 * AUTHENTICATED:
+                 * Use backend as before.
+                 */
+                const farm =
+                    await authClient.createFarm(
+                        input
+                    );
 
-    const removeFarm = useCallback(
-        async (farmId: string) => {
-            if (isGuest) {
-                throw new Error(GUEST_WRITE_ERROR);
-            }
+                await refreshFarms();
 
-            await authClient.deleteFarm(farmId);
+                return farm;
+            },
+            [
+                isGuest,
+                getStoredGuestFarms,
+                saveGuestFarms,
+                refreshFarms,
+            ]
+        );
 
-            await refreshFarms();
-        },
-        [isGuest, refreshFarms]
-    );
+    /*
+     * EDIT FARM
+     */
+    const editFarm =
+        useCallback(
+            async (
+                farmId: string,
+                input: Partial<CreateFarmInput>
+            ): Promise<FarmProfile> => {
+                /*
+                 * GUEST:
+                 * Update local farm.
+                 */
+                if (isGuest) {
+                    const currentFarms =
+                        getStoredGuestFarms();
 
-    const activeFarm = useMemo(
-        () =>
-            farms.find((farm) => farm.isDefault) ??
-            farms[0] ??
-            null,
-        [farms]
-    );
+                    const existing =
+                        currentFarms.find(
+                            (farm) =>
+                                farm.id ===
+                                farmId
+                        );
 
-    const persona: Persona | null = isGuest
-        ? 'GUEST'
-        : user?.role ?? null;
+                    if (!existing) {
+                        throw new Error(
+                            'Farm not found.'
+                        );
+                    }
+
+                    const updatedFarm: FarmProfile =
+                        {
+                            ...existing,
+                            ...input,
+                            updatedAt:
+                                new Date().toISOString(),
+                        };
+
+                    const updatedFarms =
+                        currentFarms.map(
+                            (farm) =>
+                                farm.id ===
+                                farmId
+                                    ? updatedFarm
+                                    : farm
+                        );
+
+                    saveGuestFarms(
+                        updatedFarms
+                    );
+
+                    return updatedFarm;
+                }
+
+                /*
+                 * AUTHENTICATED:
+                 * Use backend.
+                 */
+                const farm =
+                    await authClient.updateFarm(
+                        farmId,
+                        input
+                    );
+
+                setFarms((prev) =>
+                    prev.map(
+                        (existingFarm) =>
+                            existingFarm.id ===
+                            farmId
+                                ? farm
+                                : existingFarm
+                    )
+                );
+
+                return farm;
+            },
+            [
+                isGuest,
+                getStoredGuestFarms,
+                saveGuestFarms,
+            ]
+        );
+
+    /*
+     * REMOVE FARM
+     */
+    const removeFarm =
+        useCallback(
+            async (farmId: string) => {
+                /*
+                 * GUEST:
+                 * Remove locally.
+                 */
+                if (isGuest) {
+                    const currentFarms =
+                        getStoredGuestFarms();
+
+                    const remaining =
+                        currentFarms.filter(
+                            (farm) =>
+                                farm.id !==
+                                farmId
+                        );
+
+                    /*
+                     * If the active farm was
+                     * removed, make the first
+                     * remaining farm active.
+                     */
+                    if (
+                        remaining.length >
+                            0 &&
+                        !remaining.some(
+                            (farm) =>
+                                farm.isDefault
+                        )
+                    ) {
+                        remaining[0].isDefault =
+                            true;
+                    }
+
+                    saveGuestFarms(
+                        remaining
+                    );
+
+                    return;
+                }
+
+                /*
+                 * AUTHENTICATED:
+                 * Use backend.
+                 */
+                await authClient.deleteFarm(
+                    farmId
+                );
+
+                await refreshFarms();
+            },
+            [
+                isGuest,
+                getStoredGuestFarms,
+                saveGuestFarms,
+                refreshFarms,
+            ]
+        );
+
+    /*
+     * ACTIVE FARM
+     */
+    const activeFarm =
+        useMemo(
+            () =>
+                farms.find(
+                    (farm) =>
+                        farm.isDefault
+                ) ??
+                farms[0] ??
+                null,
+            [farms]
+        );
+
+    /*
+     * PERSONA
+     */
+    const persona: Persona | null =
+        isGuest
+            ? 'GUEST'
+            : user?.role ?? null;
 
     const value: AuthContextValue = {
         user,
@@ -307,10 +639,14 @@ export function AuthProvider({
         activeFarm,
         isLoading,
 
-        isAuthenticated: !!user,
+        isAuthenticated:
+            !!user,
 
-        isAdmin: user?.role === 'ADMIN',
-        isFarmer: user?.role === 'FARMER',
+        isAdmin:
+            user?.role === 'ADMIN',
+
+        isFarmer:
+            user?.role === 'FARMER',
 
         isGuest,
         persona,
@@ -330,14 +666,17 @@ export function AuthProvider({
     };
 
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider
+            value={value}
+        >
             {children}
         </AuthContext.Provider>
     );
 }
 
 export function useAuth(): AuthContextValue {
-    const ctx = useContext(AuthContext);
+    const ctx =
+        useContext(AuthContext);
 
     if (!ctx) {
         throw new Error(

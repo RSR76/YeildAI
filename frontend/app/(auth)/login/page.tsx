@@ -42,7 +42,7 @@ export default function LoginPage() {
 
   function handleGuest() {
     enterGuestMode();
-    router.push('/dashboard');
+    router.push('/farm-select');
   }
 
   return (

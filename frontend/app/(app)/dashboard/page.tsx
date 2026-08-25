@@ -119,8 +119,7 @@ export default function Dashboard() {
             </h1>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#657067]">
-              Add a farm to see crop recommendations, mandi prices,
-              weather information and yield predictions.
+              Add a farm to see crop recommendations, mandi prices and yield predictions.
             </p>
 
             <button
@@ -173,10 +172,10 @@ export default function Dashboard() {
    */
 
   return (
-    <div className="min-h-screen w-full bg-white px-5 pb-6 pt-[104px] sm:px-6 lg:px-8">
+    <div className="min-h-screen w-full bg-white px-5 py-6 mt-[64px] sm:px-6 lg:px-8 m-2">
 
       {/* HEADER */}
-      <header className="fixed left-[283px] right-0 top-0 z-40 h-[104px] border-b border-[#f0f1ef] bg-white">
+      <header className="fixed left-[283px] right-0 top-0 z-40 h-[84px] border-b border-[#f0f1ef] bg-white">
         <div className="flex h-full items-center justify-end px-8">
 
           {/* RIGHT SIDE */}
@@ -225,7 +224,7 @@ export default function Dashboard() {
 
       {/* DASHBOARD */}
       <main className="w-full">
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-2">
 
           {/* =====================================================
               CROP RECOMMENDATIONS
@@ -360,55 +359,7 @@ export default function Dashboard() {
             </DashboardButton>
           </DashboardCard>
 
-          {/* =====================================================
-              WEATHER
-          ====================================================== */}
-
-          <DashboardCard
-            className="border-[#dcecef] bg-[#f3fbfd]"
-            icon={<CloudSun className="h-7 w-7 text-[#0e9eae]" />}
-            iconClassName="bg-[#e3f8fb]"
-            title="Weather"
-          >
-            <div className="mt-5 text-center">
-              <div className="text-[29px] font-bold text-[#111827]">
-                29°C
-              </div>
-
-              <div className="mt-1 text-[14px] text-[#111827]">
-                Sunny
-              </div>
-            </div>
-
-            <div className="my-4 h-px bg-[#dbe9ec]" />
-
-            <div className="space-y-3">
-              <WeatherRow
-                icon={<Droplets className="h-4 w-4" />}
-                label="Humidity"
-                value="62%"
-              />
-
-              <WeatherRow
-                icon={<Wind className="h-4 w-4" />}
-                label="Wind"
-                value="14 km/h"
-              />
-
-              <WeatherRow
-                icon={<CloudRain className="h-4 w-4" />}
-                label="Rain Chance"
-                value="20%"
-              />
-            </div>
-
-            <DashboardButton
-              className="border-[#10a3b3] text-[#0b94a4]"
-              onClick={() => router.push('/weather')}
-            >
-              View Forecast
-            </DashboardButton>
-          </DashboardCard>
+          
 
           {/* =====================================================
               YIELD PREDICTION
@@ -444,33 +395,7 @@ export default function Dashboard() {
             </DashboardButton>
           </DashboardCard>
 
-          {/* =====================================================
-              REPORTS
-          ====================================================== */}
-
-          <DashboardCard
-            className="border-[#f0e1d6] bg-[#fff7f1]"
-            icon={<FileText className="h-7 w-7 text-[#e26700]" />}
-            iconClassName="bg-[#fff0e4]"
-            title="Reports"
-          >
-            <p className="mt-7 text-[15px] text-[#111827]">
-              Your farm reports are ready.
-            </p>
-
-            <div className="mt-5 space-y-3 text-[15px] text-[#111827]">
-              <p>• Soil Health Report</p>
-              <p>• Crop Performance Report</p>
-              <p>• Yield Report</p>
-            </div>
-
-            <DashboardButton
-              className="border-[#ed7b23] text-[#dc6200]"
-              onClick={() => router.push('/reports')}
-            >
-              View Reports
-            </DashboardButton>
-          </DashboardCard>
+          
 
         </div>
 
@@ -630,36 +555,6 @@ function MetricRow({
           {status}
         </span>
       </div>
-    </div>
-  );
-}
-
-/* ===============================================================
-   WEATHER ROW
-================================================================ */
-
-function WeatherRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center justify-between text-[14px]">
-      <div className="flex items-center gap-2 text-[#111827]">
-        <span className="text-[#1999a9]">
-          {icon}
-        </span>
-
-        <span>{label}</span>
-      </div>
-
-      <span className="font-medium text-[#111827]">
-        {value}
-      </span>
     </div>
   );
 }

@@ -48,21 +48,16 @@ const NAV_ITEMS = [
     href: '/soil-analysis',
     icon: FlaskConical,
   },
-  {
-    label: 'Weather',
-    href: '/weather',
-    icon: CloudSun,
-  },
+  // {
+  //   label: 'Weather',
+  //   href: '/weather',
+  //   icon: CloudSun,
+  // },
   {
     label: 'Yield Prediction',
     href: '/yield-prediction',
     icon: TrendingUp,
-  },
-  {
-    label: 'Reports',
-    href: '/reports',
-    icon: FileText,
-  },
+  }
 ];
 
 export function Navbar() {
@@ -120,7 +115,7 @@ export function Navbar() {
               <Sprout className="h-8 w-8 text-[#55a83b]" />
 
               <span className="text-[24px] font-bold tracking-[-0.8px] text-[#24833f]">
-                YeildAI
+                YieldAI
               </span>
             </div>
 

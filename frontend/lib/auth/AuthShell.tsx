@@ -57,7 +57,7 @@ export function AuthShell({
             <div className="flex items-center gap-2">
               <Sprout className="h-7 w-7 text-emerald-600" />
               <span className="font-[var(--font-display)] text-2xl font-bold text-[var(--forest-900)]">
-                Yeild<span className="text-emerald-600">AI</span>
+                Yield<span className="text-emerald-600">AI</span>
               </span>
             </div>
             <p className="mt-0.5 text-xs text-stone-500">Smart Farming. Better Tomorrow.</p>
@@ -66,14 +66,14 @@ export function AuthShell({
           {/* Heading */}
           <div className="max-w-xl">
             <h1 className="flex items-center gap-2 font-[var(--font-display)] text-[34px] font-bold leading-tight text-[var(--forest-900)] sm:text-[38px]">
-              Welcome to YeildAI
+              Welcome to YieldAI
               <LeafSmall className="h-6 w-6 text-emerald-600" />
             </h1>
             <p className="mt-2 flex items-center justify-start gap-2 text-lg font-semibold text-emerald-700">
               <span aria-hidden>»</span> Smart farming, better profits <span aria-hidden>«</span>
             </p>
             <p className="mt-3 text-sm leading-relaxed text-stone-600">
-              YeildAI helps farmers choose the best crops, check market prices, and increase
+              YieldAI helps farmers choose the best crops, check market prices, and increase
               profits with AI-powered predictions.
             </p>
           </div>
@@ -109,7 +109,7 @@ export function AuthShell({
           <div className="mb-2 mt-8 inline-flex max-w-md items-center gap-3 self-start rounded-2xl bg-white/90 px-5 py-3.5 shadow-sm backdrop-blur-sm">
             <Users className="h-5 w-5 shrink-0 text-emerald-700" />
             <p className="text-sm font-medium text-[var(--forest-900)]">
-              YeildAI is with farmers to grow better crops and increase profits.
+              YieldAI is with farmers to grow better crops and increase profits.
             </p>
           </div>
         </div>
@@ -126,7 +126,7 @@ export function AuthShell({
                 Login / Sign Up
               </h2>
               <p className="mt-1.5 text-sm text-stone-500">
-                Create your account and get started with YeildAI
+                Create your account and get started with YieldAI
               </p>
             </div>
 
@@ -163,7 +163,7 @@ export function AuthShell({
             <div className="mt-6 flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3.5">
               <LightbulbIcon />
               <p className="text-xs leading-relaxed text-[var(--forest-900)]">
-                YeildAI is built to help farmers make smart decisions and grow better.
+                YieldAI is built to help farmers make smart decisions and grow better.
               </p>
             </div>
           </div>

@@ -15,9 +15,15 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { AddFarmModal } from '@/components/layout/AddFarmModal';
 
 export default function FarmSelectPage() {
-  const { activeFarm } = useAuth();
+  const {
+    activeFarm,
+    isGuest,
+  } = useAuth();
+
   const router = useRouter();
-  const [showAddModal, setShowAddModal] = useState(false);
+
+  const [showAddModal, setShowAddModal] =
+    useState(false);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--canvas)] p-4 sm:p-8">
@@ -27,7 +33,7 @@ export default function FarmSelectPage() {
         <div className="relative flex flex-col justify-between overflow-hidden bg-[#f7f5eb] px-8 pt-10 sm:px-10">
 
           <div>
-            {/* Logo */}
+            {/* LOGO */}
             <div className="flex items-center gap-2">
               <Sprout
                 className="h-7 w-7 text-[var(--forest-600)]"
@@ -38,6 +44,7 @@ export default function FarmSelectPage() {
                 <span className="text-[var(--forest-900)]">
                   Yeild
                 </span>
+
                 <span className="text-[var(--forest-600)]">
                   AI
                 </span>
@@ -48,27 +55,29 @@ export default function FarmSelectPage() {
               Smart Farming, Better Tomorrow.
             </p>
 
-            {/* Heading */}
+            {/* HEADING */}
             <h1 className="mt-10 font-[var(--font-display)] text-3xl font-semibold text-[var(--forest-900)]">
               Let&apos;s get started!
             </h1>
 
             <p className="mt-2 text-sm leading-relaxed text-[var(--ink-soft)]">
-              Continue with your existing farm or add a new one.
+              {activeFarm
+                ? 'Continue with your existing farm or add a new one.'
+                : 'Add your farm to get started.'}
             </p>
           </div>
 
-          {/* Farm image */}
+          {/* FARM IMAGE */}
           <div className="relative -mx-8 mt-8 h-64 overflow-hidden sm:-mx-10">
             <Image
-                src="/images/farm-summary.png"
-                alt="Farm fields"
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="h-full w-full object-fill"
-                priority
+              src="/images/farm-summary.png"
+              alt="Farm fields"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="h-full w-full object-cover"
+              priority
             />
-            </div>
+          </div>
         </div>
 
         {/* RIGHT SIDE */}
@@ -80,11 +89,13 @@ export default function FarmSelectPage() {
 
           <div className="mt-5 space-y-4">
 
-            {/* CONTINUE WITH CURRENT FARM */}
+            {/* CURRENT / DEMO FARM */}
             {activeFarm && (
               <button
                 type="button"
-                onClick={() => router.push('/farm-summary')}
+                onClick={() =>
+                  router.push('/farm-summary')
+                }
                 className="flex w-full items-center gap-4 rounded-2xl border border-stone-200 p-4 text-left transition-colors hover:border-[var(--forest-600)] hover:bg-[var(--sage-100)]/40"
               >
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--sage-300)]">
@@ -93,7 +104,9 @@ export default function FarmSelectPage() {
 
                 <span className="flex-1">
                   <span className="block font-semibold text-[var(--forest-900)]">
-                    Continue with Current Farm
+                    {isGuest
+                      ? 'Continue with Demo Farm'
+                      : 'Continue with Current Farm'}
                   </span>
 
                   <span className="block text-sm text-[var(--ink-soft)]">
@@ -109,15 +122,19 @@ export default function FarmSelectPage() {
             {activeFarm && (
               <div className="flex items-center gap-3 text-xs text-stone-400">
                 <div className="h-px flex-1 bg-stone-200" />
+
                 <span>or</span>
+
                 <div className="h-px flex-1 bg-stone-200" />
               </div>
             )}
 
-            {/* ADD NEW FARM */}
+            {/* ADD FARM */}
             <button
               type="button"
-              onClick={() => setShowAddModal(true)}
+              onClick={() =>
+                setShowAddModal(true)
+              }
               className="flex w-full items-center gap-4 rounded-2xl border border-stone-200 p-4 text-left transition-colors hover:border-[var(--forest-600)] hover:bg-[var(--sage-100)]/40"
             >
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--forest-600)]">
@@ -143,7 +160,9 @@ export default function FarmSelectPage() {
             <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-[var(--forest-600)]" />
 
             <p className="text-xs leading-snug text-[var(--forest-900)]">
-              You can add more farms later from the Settings.
+              {isGuest
+                ? 'You can explore the demo farm or add your own farm for this session.'
+                : 'You can add more farms later from the Settings.'}
             </p>
           </div>
         </div>
@@ -152,7 +171,10 @@ export default function FarmSelectPage() {
       {/* ADD FARM MODAL */}
       {showAddModal && (
         <AddFarmModal
-          onClose={() => {
+          onClose={() =>
+            setShowAddModal(false)
+          }
+          onSuccess={() => {
             setShowAddModal(false);
             router.push('/farm-summary');
           }}

@@ -453,7 +453,7 @@ export default function SoilAnalysisPage() {
       title="Soil Analysis"
       subtitle="Detailed soil health analysis of your farm."
     >
-      <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
+      <div className="space-y-6">
 
         {/* FARM INFO */}
 

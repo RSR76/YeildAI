@@ -63,18 +63,8 @@ export default function FarmDetailsPage() {
 
   if (!activeFarm) {
     return (
-      <PageWrapper title="My Farm">
-        <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
-
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#17251d]">
-              My Farm
-            </h1>
-
-            <p className="mt-1 text-sm text-stone-500">
-              Manage your farm details and fields.
-            </p>
-          </div>
+      <PageWrapper title="My Farm" subtitle="Manage your farm details and fields.">
+        <div className="space-y-6">
 
           <Card title="No farms yet">
             <div className="py-10 text-center">
@@ -184,22 +174,8 @@ export default function FarmDetailsPage() {
      ========================================================= */
 
   return (
-    <PageWrapper title="My Farm">
-      <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
-
-        {/* =====================================================
-            PAGE HEADER
-        ===================================================== */}
-
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-[#17251d]">
-            My Farm
-          </h1>
-
-          <p className="mt-1 text-sm text-stone-500">
-            Manage your farm details and fields.
-          </p>
-        </div>
+    <PageWrapper title="My Farm" subtitle="Manage your farm details and fields.">
+        <div className="space-y-6">
 
         {/* =====================================================
             FARM OVERVIEW + LOCATION

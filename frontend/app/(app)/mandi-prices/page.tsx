@@ -63,9 +63,9 @@ export default function MandiPricesPage() {
 
   const [history, setHistory] = useState<Forecast[]>([]);
 
-  const [selected, setSelected] = useState<string | null>(
-    null,
-  );
+  const [selectedForecastId, setSelectedForecastId] = useState<
+    string | null
+  >(null);
 
   const [query, setQuery] = useState('');
 
@@ -73,23 +73,14 @@ export default function MandiPricesPage() {
 
   const [error, setError] = useState<string | null>(null);
 
-  /* =========================================================
-     LOAD CURRENT PRICES
-     ========================================================= */
-
   useEffect(() => {
     const controller = new AbortController();
 
     setLoading(true);
     setError(null);
     setForecasts(null);
-    setSelected(null);
+    setSelectedForecastId(null);
     setHistory([]);
-
-    console.log('MANDI LOCATION:', {
-      state,
-      district,
-    });
 
     getAllLatestForecasts(
       undefined,
@@ -102,12 +93,10 @@ export default function MandiPricesPage() {
       .then((data) => {
         if (controller.signal.aborted) return;
 
-        console.log('MANDI FORECAST RESPONSE:', data);
-
         setForecasts(data);
 
         if (data.length > 0) {
-          setSelected(data[0].commodity);
+          setSelectedForecastId(data[0].id);
         }
       })
       .catch((err) => {
@@ -122,29 +111,24 @@ export default function MandiPricesPage() {
         );
       })
       .finally(() => {
-        if (controller.signal.aborted) return;
-
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       });
 
     return () => controller.abort();
   }, [state, district]);
 
-  /* =========================================================
-     LOAD HISTORY
-     ========================================================= */
+  const selectedForecast = useMemo(() => {
+    return (
+      forecasts?.find(
+        (forecast) => forecast.id === selectedForecastId,
+      ) ?? null
+    );
+  }, [forecasts, selectedForecastId]);
 
   useEffect(() => {
-    if (!selected) {
-      setHistory([]);
-      return;
-    }
-
-    const row = forecasts?.find(
-      (forecast) => forecast.commodity === selected,
-    );
-
-    if (!row) {
+    if (!selectedForecast) {
       setHistory([]);
       return;
     }
@@ -152,18 +136,18 @@ export default function MandiPricesPage() {
     const controller = new AbortController();
 
     getForecastHistory(
-      selected,
-      row.state,
-      row.district,
-      row.market,
+      selectedForecast.commodity,
+      selectedForecast.state,
+      selectedForecast.district,
+      selectedForecast.market,
       {
         signal: controller.signal,
       },
     )
       .then((data) => {
-        if (controller.signal.aborted) return;
-
-        setHistory(data);
+        if (!controller.signal.aborted) {
+          setHistory(data);
+        }
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -173,13 +157,9 @@ export default function MandiPricesPage() {
       });
 
     return () => controller.abort();
-  }, [selected, forecasts]);
+  }, [selectedForecast]);
 
-  /* =========================================================
-     SEARCH
-     ========================================================= */
-
-  const filtered = useMemo(() => {
+  const filteredForecasts = useMemo(() => {
     if (!forecasts) return [];
 
     const search = query.trim().toLowerCase();
@@ -189,41 +169,28 @@ export default function MandiPricesPage() {
     }
 
     return forecasts.filter((forecast) =>
-      forecast.commodity
-        .toLowerCase()
-        .includes(search),
+      forecast.commodity.toLowerCase().includes(search),
     );
   }, [forecasts, query]);
 
-  /* =========================================================
-     CHART DATA
-     ========================================================= */
-
   const chartData = useMemo(() => {
-    return history.map((item) => ({
-      date: new Date(item.date).toLocaleDateString(
-        'en-IN',
-        {
-          month: 'short',
-          day: 'numeric',
-        },
-      ),
-      price: item.currentModalPrice,
-    }));
+    return history
+      .map((item) => {
+        const price = Number(item.currentModalPrice);
+        const parsedDate = new Date(item.date);
+
+        return {
+          date: Number.isNaN(parsedDate.getTime())
+            ? item.date
+            : parsedDate.toLocaleDateString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+              }),
+          price,
+        };
+      })
+      .filter((item) => Number.isFinite(item.price));
   }, [history]);
-
-  /* =========================================================
-     SELECTED COMMODITY
-     ========================================================= */
-
-  const selectedCommodity = forecasts?.find(
-    (forecast) =>
-      forecast.commodity === selected,
-  );
-
-  /* =========================================================
-     LOCATION BAR
-     ========================================================= */
 
   const locationBar = (
     <LocationBar
@@ -235,10 +202,7 @@ export default function MandiPricesPage() {
       hasFarm={!!activeFarm}
       onManualSelect={setManualLocation}
       onMapLocationResolved={(result) => {
-        if (
-          result.matchedState &&
-          result.matchedDistrict
-        ) {
+        if (result.matchedState && result.matchedDistrict) {
           setMapLocation(
             result.matchedState,
             result.matchedDistrict,
@@ -249,10 +213,6 @@ export default function MandiPricesPage() {
     />
   );
 
-  /* =========================================================
-     LOADING
-     ========================================================= */
-
   if (loading) {
     return (
       <PageWrapper title="Mandi Prices">
@@ -261,10 +221,6 @@ export default function MandiPricesPage() {
       </PageWrapper>
     );
   }
-
-  /* =========================================================
-     ERROR
-     ========================================================= */
 
   if (error) {
     return (
@@ -275,77 +231,31 @@ export default function MandiPricesPage() {
     );
   }
 
-  /* =========================================================
-     PAGE
-     ========================================================= */
-
   return (
-    <PageWrapper title="Mandi Prices">
-      <div className="px-5 pb-10 pt-4 sm:px-8 lg:px-10">
-
-        {/* =====================================================
-            INTRO
-        ===================================================== */}
-
-        <div className="rounded-2xl border border-[#e1eadc] bg-[#f6faf2] p-5">
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white">
-              <IndianRupee className="h-6 w-6 text-[#27833f]" />
-            </div>
-
-            <div>
-              <h1 className="text-xl font-bold text-[#173b2a]">
-                Mandi Prices
-              </h1>
-
-              <p className="mt-1 text-sm text-stone-500">
-                Today&apos;s latest market prices near your farm.
-              </p>
-            </div>
-
-          </div>
-        </div>
-
-        {/* =====================================================
-            LOCATION
-        ===================================================== */}
+    <PageWrapper title="Mandi Prices" subtitle="Today's latest market prices near your farm.">
+      <div className="space-y-6">
 
         {locationBar}
 
-        {/* =====================================================
-            SEARCH
-        ===================================================== */}
-
         <div className="rounded-2xl border border-stone-200 bg-white p-4">
-
           <label className="mb-2 block text-sm font-semibold text-stone-700">
             Find a crop
           </label>
 
           <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5">
-
             <Search className="h-4 w-4 shrink-0 text-stone-400" />
 
             <input
               value={query}
-              onChange={(event) =>
-                setQuery(event.target.value)
-              }
+              onChange={(event) => setQuery(event.target.value)}
               placeholder="Search tomato, onion, wheat..."
               className="w-full bg-transparent text-sm text-stone-700 outline-none placeholder:text-stone-400"
             />
-
           </div>
         </div>
 
-        {/* =====================================================
-            PRICE LIST
-        ===================================================== */}
-
         <Card title="Today's Prices">
-
-          {filtered.length === 0 ? (
+          {filteredForecasts.length === 0 ? (
             <EmptyState
               message={
                 (forecasts ?? []).length === 0
@@ -355,10 +265,9 @@ export default function MandiPricesPage() {
             />
           ) : (
             <div className="space-y-3">
-
-              {filtered.map((forecast) => {
+              {filteredForecasts.map((forecast) => {
                 const isSelected =
-                  selected === forecast.commodity;
+                  selectedForecastId === forecast.id;
 
                 const trend =
                   forecast.predictedPriceTrend?.toLowerCase();
@@ -368,9 +277,7 @@ export default function MandiPricesPage() {
                     key={forecast.id}
                     type="button"
                     onClick={() =>
-                      setSelected(
-                        forecast.commodity,
-                      )
+                      setSelectedForecastId(forecast.id)
                     }
                     className={`w-full rounded-xl border p-4 text-left transition-all ${
                       isSelected
@@ -378,11 +285,7 @@ export default function MandiPricesPage() {
                         : 'border-stone-200 bg-white hover:border-emerald-200 hover:bg-[#fafcf9]'
                     }`}
                   >
-
                     <div className="flex items-center justify-between gap-4">
-
-                      {/* CROP */}
-
                       <div className="min-w-0">
                         <p className="truncate text-base font-semibold text-[#173b2a]">
                           {forecast.commodity}
@@ -393,97 +296,69 @@ export default function MandiPricesPage() {
                         </p>
                       </div>
 
-                      {/* PRICE */}
-
                       <div className="shrink-0 text-right">
                         <p className="text-lg font-bold text-[#173b2a]">
                           ₹
-                          {forecast.currentModalPrice.toLocaleString(
-                            'en-IN',
-                          )}
+                          {Number(
+                            forecast.currentModalPrice,
+                          ).toLocaleString('en-IN')}
                         </p>
 
                         <p className="text-[11px] text-stone-400">
                           per quintal
                         </p>
                       </div>
-
                     </div>
 
-                    {/* INFO */}
-
                     <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
-
                       <SimpleTrend trend={trend} />
 
                       <ConfidenceBadge
                         band={forecast.confidenceBand}
                       />
-
                     </div>
-
                   </button>
                 );
               })}
-
             </div>
           )}
-
         </Card>
 
-        {/* =====================================================
-            SELECTED CROP
-        ===================================================== */}
-
-        {selectedCommodity && (
-          <Card
-            title={`${selectedCommodity.commodity} Price`}
-          >
-
+        {selectedForecast && (
+          <Card title={`${selectedForecast.commodity} Price`}>
             <div className="mb-5 rounded-xl bg-[#f6faf2] p-4">
-
               <div className="flex items-center justify-between gap-4">
-
                 <div>
-
                   <p className="text-xs text-stone-500">
                     Current modal price
                   </p>
 
                   <p className="mt-1 text-2xl font-bold text-[#173b2a]">
                     ₹
-                    {selectedCommodity.currentModalPrice.toLocaleString(
-                      'en-IN',
-                    )}
+                    {Number(
+                      selectedForecast.currentModalPrice,
+                    ).toLocaleString('en-IN')}
                   </p>
 
                   <p className="mt-1 text-xs text-stone-400">
                     per quintal
                   </p>
-
                 </div>
 
                 <SimpleTrend
-                  trend={
-                    selectedCommodity.predictedPriceTrend?.toLowerCase()
-                  }
+                  trend={selectedForecast.predictedPriceTrend?.toLowerCase()}
                 />
-
               </div>
-
             </div>
 
             {chartData.length > 0 ? (
               <>
                 <div className="mb-4 flex items-center gap-2 text-sm text-stone-500">
                   <LineChartIcon className="h-4 w-4 text-emerald-600" />
-                  Price over the last 8 weeks
+                  Recent price history
                 </div>
 
-                <ResponsiveContainer
-                  width="100%"
-                  height={240}
-                >
+                <ResponsiveContainer width="100%" height={240}>
                   <LineChart
                     data={chartData}
                     margin={{
@@ -493,7 +368,6 @@ export default function MandiPricesPage() {
                       bottom: 0,
                     }}
                   >
-
                     <CartesianGrid
                       strokeDasharray="3 5"
                       stroke="var(--line)"
@@ -539,7 +413,6 @@ export default function MandiPricesPage() {
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
                     />
-
                   </LineChart>
                 </ResponsiveContainer>
               </>
@@ -550,34 +423,22 @@ export default function MandiPricesPage() {
                 </p>
               </div>
             )}
-
           </Card>
         )}
 
-        {/* =====================================================
-            SIMPLE TIP
-        ===================================================== */}
-
         <div className="rounded-xl border border-[#e1eadc] bg-[#f6faf2] px-4 py-3">
-
           <p className="text-sm leading-5 text-stone-600">
             <span className="font-semibold text-[#173b2a]">
               Tip:
             </span>{' '}
-            Prices can change daily. Check the latest price
-            before selling your crop.
+            Prices can change daily. Check the latest price before
+            selling your crop.
           </p>
-
         </div>
-
       </div>
     </PageWrapper>
   );
 }
-
-/* =========================================================
-   SIMPLE TREND
-   ========================================================= */
 
 function SimpleTrend({
   trend,

@@ -23,7 +23,7 @@ function numOrNull(value: unknown): number | null {
 }
 
 /**
- * Local YeildAI Forecast table.
+ * Local YieldAI Forecast table.
  *
  * The current database uses:
  *
