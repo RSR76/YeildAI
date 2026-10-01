@@ -83,7 +83,7 @@ export const LocationPicker = memo(function LocationPicker({
       {expanded && (
         <div id="location-map-panel" className="mt-3 space-y-3">
           <p className="text-xs text-stone-500">
-            The map opens centered on Telangana, YieldAI&apos;s currently supported state — click anywhere (including
+            The map opens centered on Telangana, BhaviAI&apos;s currently supported state — click anywhere (including
             outside Telangana) to drop a pin. Click elsewhere to move it. The state/district selectors above always
             keep working, whether or not you use the map.
           </p>

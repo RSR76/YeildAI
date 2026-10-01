@@ -115,7 +115,7 @@ export function Navbar() {
               <Sprout className="h-8 w-8 text-[#55a83b]" />
 
               <span className="text-[24px] font-bold tracking-[-0.8px] text-[#24833f]">
-                YieldAI
+                BhaviAI
               </span>
             </div>
 
