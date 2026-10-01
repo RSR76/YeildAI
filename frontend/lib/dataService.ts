@@ -13,12 +13,11 @@
  */
 
 import { apiClient, apiRequest, type ApiClientOptions } from './api';
-import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption, ReverseGeocodeResult, AdminRegionSummary, AdminDistrictDetail } from './types';
+import type { Forecast, Recommendation, MarketAnalysis, Broker, Report, Location, MarketOption, ReverseGeocodeResult, AdminRegionSummary, AdminDistrictDetail, YearlyHistory, YearComparisonEntry } from './types';
 import {
     DEFAULT_LOCATION,
     mockMarketAnalysis,
     mockBrokers,
-    mockReports,
 } from './mockData';
 
 export { DEFAULT_LOCATION };
@@ -55,6 +54,53 @@ export function getForecastHistory(
     options?: ApiClientOptions
 ): Promise<Forecast[]> {
     return apiClient<Forecast[]>('/forecast/history', { commodity, state, district, market }, options);
+}
+
+/**
+ * Genuine multi-year history (Phase 7/14) — no mock fallback, same as the
+ * rest of the forecast/recommendation data: a backend failure must surface
+ * as a visible error, never silently swap in fabricated years.
+ */
+/** Distinct calendar years with at least one stored record for this (commodity, market) pair. Bare array — see backend/src/controllers/forecast.controller.ts#getYears. */
+export function listAvailableYears(
+    commodity: string,
+    state: string,
+    district: string,
+    market: string,
+    options?: ApiClientOptions
+): Promise<number[]> {
+    return apiClient<number[]>('/forecast/years', { commodity, state, district, market }, options);
+}
+
+export function getYearlyHistory(
+    commodity: string,
+    state: string,
+    district: string,
+    market: string,
+    year: number,
+    options?: ApiClientOptions
+): Promise<YearlyHistory> {
+    return apiClient<YearlyHistory>(
+        '/forecast/yearly-history',
+        { commodity, state, district, market, year: String(year) },
+        options
+    );
+}
+
+/** Year-over-year comparison. Bare array (one entry per requested year, in order) — see backend/src/controllers/forecast.controller.ts#getYearComparison. */
+export function compareYears(
+    commodity: string,
+    state: string,
+    district: string,
+    market: string,
+    years: number[],
+    options?: ApiClientOptions
+): Promise<YearComparisonEntry[]> {
+    return apiClient<YearComparisonEntry[]>(
+        '/forecast/year-comparison',
+        { commodity, state, district, market, years: years.join(',') },
+        options
+    );
 }
 
 export function getCommodities(options?: ApiClientOptions): Promise<string[]> {
@@ -115,8 +161,9 @@ export function getBrokers(): Promise<Broker[]> {
 }
 
 export function getReports(): Promise<Report[]> {
-    // No dedicated /reports endpoint exists on the backend yet — this reads
-    // the `Report` model shape from the schema, so it will work as-is once
-    // one is added.
-    return Promise.resolve(mockReports);
+    // No dedicated /reports endpoint exists on the backend yet. Returning an
+    // empty list (rather than mock data) lets the page show its honest
+    // "no reports yet" empty state instead of placeholder content dressed up
+    // as real reports — see reports/page.tsx.
+    return Promise.resolve([]);
 }

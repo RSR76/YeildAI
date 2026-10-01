@@ -1,0 +1,301 @@
+State,District,Market,Commodity,Variety,Grade,Arrival_Date,Min_Price,Max_Price,Modal_Price,Commodity_Code
+Telangana,Karimnagar,Karimnagar,Green Chilli,Green Chilly,FAQ,2025-01-01,2000.0,3700.0,2850.0,87
+Telangana,Khammam,Burgampadu,Wood,Subabul,FAQ,2025-01-01,375.0,375.0,375.0,203
+Telangana,Khammam,Burgampadu,Wood,Eucalyptus,FAQ,2025-01-01,390.0,440.0,420.0,203
+Telangana,Ranga Reddy,Chevella,Cabbage,Cabbage,FAQ,2025-01-01,1500.0,1500.0,1500.0,154
+Telangana,Ranga Reddy,Chevella,Cauliflower,African Sarson,FAQ,2025-01-01,1500.0,1500.0,1500.0,34
+Telangana,Hyderabad,Gaddiannaram,Ber (Zizyphus/Borehannu),Ber (Zizyphus),Medium,2025-01-01,900.0,3500.0,1200.0,357
+Telangana,Ranga Reddy,Chevella,Tomato,Deshi,FAQ,2025-01-01,1000.0,1000.0,1000.0,78
+Telangana,Ranga Reddy,Ibrahimputnam,Cabbage,Cabbage,FAQ,2025-01-01,2000.0,3000.0,2500.0,154
+Telangana,Hyderabad,Gaddiannaram,Custard Apple (Sharifa),Custard Apple (Sharifa),Medium,2025-01-01,1500.0,3000.0,2000.0,352
+Telangana,Ranga Reddy,Ibrahimputnam,Green Chilli,Green Chilly,FAQ,2025-01-01,3000.0,5000.0,4000.0,87
+Telangana,Karimnagar,Karimnagar,Carrot,Carrot,FAQ,2025-01-01,4000.0,4000.0,4000.0,153
+Telangana,Hyderabad,Gaddiannaram,Guava,Guava,Medium,2025-01-01,1500.0,3500.0,2250.0,185
+Telangana,Hyderabad,Gaddiannaram,Mango,Badami,Medium,2025-01-01,1650.0,20000.0,4400.0,20
+Telangana,Hyderabad,Gaddiannaram,Mousambi (Sweet Lime),Mousambi,Medium,2025-01-01,700.0,1300.0,800.0,77
+Telangana,Hyderabad,Gaddiannaram,Orange,Darjeeling,Medium,2025-01-01,500.0,4000.0,2250.0,18
+Telangana,Hyderabad,Gaddiannaram,Papaya,Other,Medium,2025-01-01,1100.0,2200.0,1600.0,72
+Telangana,Hyderabad,Gaddiannaram,Pineapple,Other,Medium,2025-01-01,450.0,3500.0,800.0,21
+Telangana,Hyderabad,Gaddiannaram,Plum,Other,Medium,2025-01-01,2850.0,8550.0,5700.0,329
+Telangana,Hyderabad,Gaddiannaram,Chikoos (Sapota),Other,Medium,2025-01-01,1400.0,3200.0,2000.0,71
+Telangana,Hyderabad,Gaddiannaram,Pomegranate,Other,Medium,2025-01-01,1000.0,13000.0,3000.0,190
+Telangana,Hyderabad,Gaddiannaram,Grapes,Black,Medium,2025-01-01,1500.0,5600.0,2500.0,22
+Telangana,Hyderabad,Gaddiannaram,Grapes,White,Medium,2025-01-01,12500.0,18750.0,15000.0,22
+Telangana,Hyderabad,Gaddiannaram,Karbuja (Musk Melon),Karbhuja,Medium,2025-01-01,600.0,2000.0,800.0,187
+Telangana,Hyderabad,Gaddiannaram,Kinnow,Kinnow,Medium,2025-01-01,2000.0,6500.0,3500.0,336
+Telangana,Khammam,Burgampadu,Paddy (Dhan)(Common),Samba Masuri,FAQ,2025-01-01,2320.0,2320.0,2320.0,2
+Telangana,Hyderabad,Gudimalkapur,Jarbara,Jerbara,FAQ,2025-01-01,80.0,120.0,100.0,376
+Telangana,Hyderabad,Gudimalkapur,Jasmine,Jasmine,FAQ,2025-01-01,520.0,580.0,550.0,229
+Telangana,Hyderabad,Gaddiannaram,Apple,Simla,Medium,2025-01-01,2500.0,10000.0,5000.0,17
+Telangana,Hyderabad,Gudimalkapur,Kankambra,Kankambra,FAQ,2025-01-01,200.0,400.0,300.0,233
+Telangana,Hyderabad,Gudimalkapur,Lilly,Lily,FAQ,2025-01-01,2.0,6.0,4.0,378
+Telangana,Hyderabad,Gudimalkapur,Rose (Loose)),Other,FAQ,2025-01-01,60.0,100.0,80.0,228
+Telangana,Karimnagar,Karimnagar,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-01,1500.0,1500.0,1500.0,85
+Telangana,Hyderabad,Gaddiannaram,Water Melon,Other,Medium,2025-01-01,200.0,800.0,400.0,73
+Telangana,Karimnagar,Karimnagar,Brinjal,Brinjal,FAQ,2025-01-01,1500.0,1500.0,1500.0,35
+Telangana,Karimnagar,Karimnagar,Cabbage,Cabbage,FAQ,2025-01-01,1300.0,1300.0,1300.0,154
+Telangana,Hyderabad,Gudimalkapur,Carnation,Cornation,FAQ,2025-01-01,200.0,250.0,220.0,375
+Telangana,Karimnagar,Karimnagar,Capsicum,Capsicum,FAQ,2025-01-01,4800.0,4800.0,4800.0,164
+Telangana,Ranga Reddy,Chevella,Brinjal,Other,FAQ,2025-01-01,3000.0,3000.0,3000.0,35
+Telangana,Ranga Reddy,Chevella,Green Chilli,Green Chilly,FAQ,2025-01-01,5000.0,5000.0,5000.0,87
+Telangana,Warangal,Warangal,Cauliflower,Cauliflower,FAQ,2025-01-01,1600.0,2000.0,1800.0,34
+Telangana,Warangal,Warangal,French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-01,3500.0,4000.0,3750.0,298
+Telangana,Warangal,Warangal,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-01,1600.0,2000.0,1800.0,159
+Telangana,Warangal,Warangal,Field Pea,Field Pea,FAQ,2025-01-01,3500.0,4000.0,3750.0,64
+Telangana,Warangal,Warangal,Potato,Potato,FAQ,2025-01-01,3200.0,3600.0,3400.0,24
+Telangana,Warangal,Warangal,Green Chilli,Green Chilly,FAQ,2025-01-01,2000.0,2500.0,2250.0,87
+Telangana,Warangal,Warangal,Kinnow,Kinnow,Medium,2025-01-01,7000.0,7000.0,7000.0,336
+Telangana,Warangal,Warangal,Tomato,Tomato,FAQ,2025-01-01,1000.0,1400.0,1200.0,78
+Telangana,Warangal,Warangal,Brinjal,Brinjal,FAQ,2025-01-01,2000.0,2500.0,2250.0,35
+Telangana,Ranga Reddy,Ibrahimputnam,Tomato,Deshi,FAQ,2025-01-01,1000.0,2000.0,1500.0,78
+Telangana,Warangal,Warangal,Carrot,Carrot,FAQ,2025-01-01,3500.0,4000.0,3750.0,153
+Telangana,Hyderabad,Gudimalkapur,Astera,Astera,FAQ,2025-01-01,140.0,160.0,150.0,232
+Telangana,Warangal,Warangal,Capsicum,Capsicum,FAQ,2025-01-01,4000.0,4500.0,4250.0,164
+Telangana,Warangal,Warangal,Colacasia,Colacasia,FAQ,2025-01-01,2500.0,3000.0,2750.0,318
+Telangana,Warangal,Warangal,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-01,1600.0,2000.0,1800.0,85
+Telangana,Warangal,Warangal,Cabbage,Cabbage,FAQ,2025-01-01,1000.0,1400.0,1200.0,154
+Telangana,Hyderabad,Gudimalkapur,Kakada,Kakada,FAQ,2025-01-01,100.0,200.0,150.0,230
+Telangana,Ranga Reddy,Ibrahimputnam,Carrot,Carrot,FAQ,2025-01-01,4000.0,5000.0,4500.0,153
+Telangana,Hyderabad,Gudimalkapur,Marigold (loose),Marigold (Loose),FAQ,2025-01-01,20.0,40.0,30.0,405
+Telangana,Karimnagar,Karimnagar,Bitter gourd,Bitter Gourd,FAQ,2025-01-01,3000.0,4000.0,3500.0,81
+Telangana,Warangal,Warangal,Beetroot,Beetroot,FAQ,2025-01-01,2500.0,3000.0,2750.0,157
+Telangana,Hyderabad,Gudimalkapur,Gladiolus Cut Flower,Gladiolus Cut Flower,FAQ,2025-01-01,40.0,80.0,60.0,363
+Telangana,Hyderabad,Bowenpally,Beetroot,Beetroot,FAQ,2025-01-02,500.0,3000.0,2500.0,157
+Telangana,Hyderabad,Bowenpally,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,500.0,1500.0,1200.0,85
+Telangana,Hyderabad,Bowenpally,Bitter gourd,Bitter Gourd,FAQ,2025-01-02,600.0,3000.0,2500.0,81
+Telangana,Hyderabad,Gaddiannaram,Ber (Zizyphus/Borehannu),Ber (Zizyphus),Medium,2025-01-02,900.0,3000.0,1200.0,357
+Telangana,Hyderabad,Gudimalkapur,Kakada,Kakada,FAQ,2025-01-02,100.0,200.0,150.0,230
+Telangana,Hyderabad,Gudimalkapur,Jasmine,Jasmine,FAQ,2025-01-02,420.0,580.0,500.0,229
+Telangana,Hyderabad,Gudimalkapur,Jarbara,Jerbara,FAQ,2025-01-02,80.0,120.0,100.0,376
+Telangana,Hyderabad,Gudimalkapur,Green Chilli,Green Chilly,FAQ,2025-01-02,1800.0,3500.0,3000.0,87
+Telangana,Hyderabad,Gudimalkapur,Gladiolus Cut Flower,Gladiolus Cut Flower,FAQ,2025-01-02,40.0,60.0,50.0,363
+Telangana,Hyderabad,Gudimalkapur,French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,2500.0,6000.0,3500.0,298
+Telangana,Hyderabad,Gudimalkapur,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,1000.0,2000.0,1200.0,159
+Telangana,Hyderabad,Gudimalkapur,Cluster beans,Cluster Beans,FAQ,2025-01-02,2000.0,3000.0,2500.0,80
+Telangana,Hyderabad,Gudimalkapur,Chow Chow,Chow Chow,FAQ,2025-01-02,1000.0,1200.0,1000.0,167
+Telangana,Hyderabad,Gudimalkapur,Cauliflower,African Sarson,FAQ,2025-01-02,700.0,1500.0,1000.0,34
+Telangana,Hyderabad,Gudimalkapur,Carrot,Carrot,FAQ,2025-01-02,600.0,3000.0,2000.0,153
+Telangana,Hyderabad,Gudimalkapur,Carnation,Cornation,FAQ,2025-01-02,200.0,250.0,220.0,375
+Telangana,Hyderabad,Gudimalkapur,Marigold (loose),Marigold (Loose),FAQ,2025-01-02,20.0,40.0,30.0,405
+Telangana,Hyderabad,Gudimalkapur,Brinjal,Arkasheela Mattigulla,FAQ,2025-01-02,400.0,2000.0,1000.0,35
+Telangana,Hyderabad,Gudimalkapur,Bottle gourd,Bottle Gourd,FAQ,2025-01-02,600.0,1500.0,800.0,82
+Telangana,Hyderabad,L B Nagar,Tomato,Deshi,FAQ,2025-01-02,400.0,600.0,500.0,78
+Telangana,Hyderabad,Gudimalkapur,Cabbage,Cabbage,FAQ,2025-01-02,800.0,1500.0,1000.0,154
+Telangana,Hyderabad,Bowenpally,Bottle gourd,Bottle Gourd,FAQ,2025-01-02,300.0,800.0,700.0,82
+Telangana,Hyderabad,Bowenpally,Tomato,Deshi,FAQ,2025-01-02,400.0,800.0,600.0,78
+Telangana,Hyderabad,Bowenpally,Onion Green,Onion Green,FAQ,2025-01-02,1500.0,4000.0,3000.0,358
+Telangana,Hyderabad,Bowenpally,Onion,1st Sort,FAQ,2025-01-02,800.0,3500.0,2200.0,23
+Telangana,Hyderabad,Bowenpally,Green Chilli,Green Chilly,FAQ,2025-01-02,600.0,4000.0,2200.0,87
+Telangana,Hyderabad,Bowenpally,French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,1000.0,3500.0,2800.0,298
+Telangana,Hyderabad,Bowenpally,Field Pea,Field Pea,FAQ,2025-01-02,1500.0,3500.0,3000.0,64
+Telangana,Hyderabad,Bowenpally,Drumstick,Drumstick,FAQ,2025-01-02,5000.0,12000.0,10000.0,168
+Telangana,Hyderabad,Bowenpally,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,500.0,2000.0,1000.0,159
+Telangana,Hyderabad,Bowenpally,Colacasia,Colacasia,FAQ,2025-01-02,1500.0,3500.0,2800.0,318
+Telangana,Hyderabad,Bowenpally,Cluster beans,Cluster Beans,FAQ,2025-01-02,1000.0,2500.0,2000.0,80
+Telangana,Hyderabad,Bowenpally,Chow Chow,Chow Chow,FAQ,2025-01-02,500.0,1000.0,800.0,167
+Telangana,Hyderabad,Bowenpally,Cauliflower,African Sarson,FAQ,2025-01-02,500.0,1000.0,800.0,34
+Telangana,Hyderabad,Bowenpally,Capsicum,Capsicum,FAQ,2025-01-02,1000.0,4200.0,3500.0,164
+Telangana,Hyderabad,Bowenpally,Cabbage,Cabbage,FAQ,2025-01-02,400.0,1000.0,800.0,154
+Telangana,Hyderabad,Gaddiannaram,Apple,Simla,Medium,2025-01-02,2500.0,11000.0,5000.0,17
+Telangana,Hyderabad,Bowenpally,Brinjal,Arkasheela Mattigulla,FAQ,2025-01-02,800.0,2000.0,1600.0,35
+Telangana,Hyderabad,Gaddiannaram,Chikoos (Sapota),Other,Medium,2025-01-02,1600.0,3600.0,2400.0,71
+Telangana,Hyderabad,Gaddiannaram,Grapes,Black,Medium,2025-01-02,1500.0,5600.0,2500.0,22
+Telangana,Hyderabad,Gudimalkapur,Bitter gourd,Bitter Gourd,FAQ,2025-01-02,2000.0,3500.0,3000.0,81
+Telangana,Hyderabad,Gudimalkapur,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,1000.0,2000.0,1200.0,85
+Telangana,Hyderabad,Gudimalkapur,Beetroot,Beetroot,FAQ,2025-01-02,2000.0,3000.0,2500.0,157
+Telangana,Hyderabad,Gudimalkapur,Banana - Green,Banana - Green,FAQ,2025-01-02,1000.0,2500.0,2000.0,90
+Telangana,Hyderabad,Gudimalkapur,Astera,Astera,FAQ,2025-01-02,140.0,160.0,150.0,232
+Telangana,Hyderabad,Gaddiannaram,Water Melon,Other,Medium,2025-01-02,200.0,800.0,400.0,73
+Telangana,Hyderabad,Gaddiannaram,Pomegranate,Other,Medium,2025-01-02,1000.0,13000.0,3000.0,190
+Telangana,Hyderabad,Gaddiannaram,Pineapple,Other,Medium,2025-01-02,450.0,3350.0,800.0,21
+Telangana,Hyderabad,Gaddiannaram,Papaya,Other,Medium,2025-01-02,400.0,2700.0,1500.0,72
+Telangana,Hyderabad,Gaddiannaram,Orange,Darjeeling,Medium,2025-01-02,500.0,3850.0,2100.0,18
+Telangana,Hyderabad,Gaddiannaram,Mousambi (Sweet Lime),Mousambi,Medium,2025-01-02,800.0,2100.0,1000.0,77
+Telangana,Hyderabad,Gaddiannaram,Mango,Badami,Medium,2025-01-02,1650.0,11100.0,3600.0,20
+Telangana,Hyderabad,Gaddiannaram,Kinnow,Kinnow,Medium,2025-01-02,2000.0,7000.0,4000.0,336
+Telangana,Hyderabad,Gaddiannaram,Karbuja (Musk Melon),Karbhuja,Medium,2025-01-02,600.0,2000.0,800.0,187
+Telangana,Hyderabad,Gaddiannaram,Guava,Guava,Medium,2025-01-02,1500.0,4000.0,2500.0,185
+Telangana,Hyderabad,Gaddiannaram,Custard Apple (Sharifa),Custard Apple (Sharifa),Medium,2025-01-02,1250.0,3000.0,1750.0,352
+Telangana,Hyderabad,Gudimalkapur,Lilly,Lily,FAQ,2025-01-02,2.0,4.0,3.0,378
+Telangana,Hyderabad,Gudimalkapur,Kankambra,Kankambra,FAQ,2025-01-02,400.0,600.0,500.0,233
+Telangana,Hyderabad,Gudimalkapur,Drumstick,Drumstick,FAQ,2025-01-02,6000.0,7000.0,6000.0,168
+Telangana,Hyderabad,Gudimalkapur,Capsicum,Capsicum,FAQ,2025-01-02,1500.0,4000.0,2000.0,164
+Telangana,Hyderabad,Gudimalkapur,Onion Green,Onion Green,FAQ,2025-01-02,2500.0,3000.0,2500.0,358
+Telangana,Hyderabad,L B Nagar,Green Chilli,Green Chilly,FAQ,2025-01-02,2500.0,3500.0,3000.0,87
+Telangana,Hyderabad,Gudimalkapur,Onion,1st Sort,FAQ,2025-01-02,1000.0,4000.0,2500.0,23
+Telangana,Hyderabad,L B Nagar,French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,3000.0,4000.0,3500.0,298
+Telangana,Hyderabad,L B Nagar,Field Pea,Field Pea,FAQ,2025-01-02,3000.0,4000.0,3500.0,64
+Telangana,Hyderabad,L B Nagar,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,1000.0,1500.0,1200.0,159
+Telangana,Hyderabad,L B Nagar,Cauliflower,Cauliflower,FAQ,2025-01-02,1000.0,1500.0,1200.0,34
+Telangana,Hyderabad,L B Nagar,Carrot,Carrot,FAQ,2025-01-02,3000.0,3500.0,3200.0,153
+Telangana,Hyderabad,L B Nagar,Capsicum,Capsicum,FAQ,2025-01-02,4000.0,4500.0,4200.0,164
+Telangana,Hyderabad,L B Nagar,Cabbage,Cabbage,FAQ,2025-01-02,1000.0,1500.0,1200.0,154
+Telangana,Hyderabad,L B Nagar,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,2000.0,2500.0,2200.0,85
+Telangana,Hyderabad,L B Nagar,Beetroot,Beetroot,FAQ,2025-01-02,2000.0,3000.0,2500.0,157
+Telangana,Hyderabad,Gudimalkapur,Tomato,Deshi,FAQ,2025-01-02,400.0,800.0,600.0,78
+Telangana,Hyderabad,Gudimalkapur,Rose (Loose)),Other,FAQ,2025-01-02,60.0,100.0,80.0,228
+Telangana,Hyderabad,Gudimalkapur,Ridgeguard (Tori),Other,FAQ,2025-01-02,2500.0,5000.0,3500.0,160
+Telangana,Hyderabad,Gudimalkapur,Raddish,Other,FAQ,2025-01-02,1000.0,1500.0,1000.0,161
+Telangana,Hyderabad,Gudimalkapur,Pumpkin,Other,FAQ,2025-01-02,1000.0,1200.0,1000.0,84
+Telangana,Hyderabad,Gudimalkapur,Field Pea,Field Pea,FAQ,2025-01-02,2500.0,3000.0,3000.0,64
+Telangana,Hyderabad,Mahboob Manison,Beetroot,Beetroot,FAQ,2025-01-02,3000.0,3000.0,3000.0,157
+Telangana,Hyderabad,Mahboob Manison,Carrot,Carrot,FAQ,2025-01-02,2500.0,3500.0,3000.0,153
+Telangana,Ranga Reddy,Ibrahimputnam,Cabbage,Cabbage,FAQ,2025-01-02,2000.0,3000.0,2500.0,154
+Telangana,Ranga Reddy,Chevella,Cauliflower,African Sarson,FAQ,2025-01-02,1500.0,1500.0,1500.0,34
+Telangana,Nalgonda,Tirumalagiri,Paddy (Dhan)(Common),Samba Masuri,FAQ,2025-01-02,2001.0,2311.0,2285.0,2
+Telangana,Nalgonda,Huzurnagar,Paddy (Dhan)(Common),B P T,FAQ,2025-01-02,2320.0,2320.0,2320.0,2
+Telangana,Medak,Zaheerabad,Green Gram (Moong)(Whole),Local,FAQ,2025-01-02,6062.0,6712.0,6062.0,9
+Telangana,Mahbubnagar,Narayanpet,Cowpea (Lobia/Karamani),Cowpea (Whole),FAQ,2025-01-02,7512.0,7512.0,7512.0,92
+Telangana,Karimnagar,Karimnagar,Carrot,Carrot,FAQ,2025-01-02,4000.0,4000.0,4000.0,153
+Telangana,Karimnagar,Husnabad,Cotton,Cotton (Unginned),FAQ,2025-01-02,7121.0,7521.0,7421.0,15
+Telangana,Hyderabad,Mahboob Manison,Green Chilli,Green Chilly,FAQ,2025-01-02,3500.0,4500.0,4000.0,87
+Telangana,Hyderabad,Mahboob Manison,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,2000.0,2000.0,2000.0,159
+Telangana,Khammam,Bhadrachalam,Paddy (Dhan)(Common),Samba Masuri,FAQ,2025-01-02,2320.0,2320.0,2320.0,2
+Telangana,Khammam,Kothagudem,Cotton,Cotton (Unginned),FAQ,2025-01-02,7400.0,7400.0,7400.0,15
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Banana - Green,Banana - Green,FAQ,2025-01-02,900.0,900.0,900.0,90
+Telangana,Medak,Vantamamidi,Field Pea,Field Pea,FAQ,2025-01-02,1900.0,3500.0,2700.0,64
+Telangana,Medak,Vantamamidi,Cauliflower,Cauliflower,FAQ,2025-01-02,1700.0,1700.0,1700.0,34
+Telangana,Medak,Vantamamidi,Brinjal,Arkasheela Mattigulla,FAQ,2025-01-02,1000.0,2000.0,1500.0,35
+Telangana,Medak,Vantamamidi,Bitter gourd,Bitter Gourd,FAQ,2025-01-02,1600.0,2300.0,1950.0,81
+Telangana,Warangal,Warangal,Cauliflower,Cauliflower,FAQ,2025-01-02,1600.0,2000.0,1800.0,34
+Telangana,Medak,Sadasivpet,Onion,1st Sort,FAQ,2025-01-02,1652.0,3260.0,3260.0,23
+Telangana,Warangal,Warangal,Carrot,Carrot,FAQ,2025-01-02,3500.0,4000.0,3750.0,153
+Telangana,Mahbubnagar,Shadnagar,Tomato,Deshi,FAQ,2025-01-02,800.0,1200.0,1000.0,78
+Telangana,Warangal,Warangal,Capsicum,Capsicum,FAQ,2025-01-02,4500.0,5000.0,4750.0,164
+Telangana,Mahbubnagar,Shadnagar,Cluster beans,Cluster Beans,FAQ,2025-01-02,2300.0,2800.0,2500.0,80
+Telangana,Warangal,Warangal,Cabbage,Cabbage,FAQ,2025-01-02,1200.0,1600.0,1400.0,154
+Telangana,Warangal,Warangal,Brinjal,Brinjal,FAQ,2025-01-02,1600.0,2000.0,1800.0,35
+Telangana,Warangal,Warangal,Orange,Orange,Large,2025-01-02,2500.0,2500.0,2500.0,18
+Telangana,Warangal,Warangal,Bitter gourd,Bitter Gourd,FAQ,2025-01-02,3500.0,4000.0,3750.0,81
+Telangana,Warangal,Warangal,Potato,Potato,FAQ,2025-01-02,3200.0,3600.0,3400.0,24
+Telangana,Warangal,Warangal,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,1600.0,2000.0,1800.0,85
+Telangana,Warangal,Warangal,Orange,Orange,Medium,2025-01-02,2200.0,2200.0,2200.0,18
+Telangana,Medak,Zaheerabad,Arhar (Tur/Red Gram)(Whole),Local,FAQ,2025-01-02,6625.0,8479.0,7010.0,49
+Telangana,Medak,Vantamamidi,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,1600.0,2000.0,1800.0,85
+Telangana,Ranga Reddy,Ibrahimputnam,Green Chilli,Green Chilly,FAQ,2025-01-02,3000.0,4000.0,3500.0,87
+Telangana,Mahbubnagar,Narayanpet,Arhar (Tur/Red Gram)(Whole),Local,FAQ,2025-01-02,6029.0,8960.0,8630.0,49
+Telangana,Medak,Gajwel,Cotton,Cotton (Ginned),FAQ,2025-01-02,6500.0,6680.0,6675.0,15
+Telangana,Ranga Reddy,Chevella,Tomato,Deshi,FAQ,2025-01-02,1000.0,1000.0,1000.0,78
+Telangana,Karimnagar,Karimnagar,Capsicum,Capsicum,FAQ,2025-01-02,5000.0,5000.0,5000.0,164
+Telangana,Mahbubnagar,Shadnagar,Green Chilli,Green Chilly,FAQ,2025-01-02,1800.0,2300.0,2200.0,87
+Telangana,Ranga Reddy,Chevella,Cabbage,Cabbage,FAQ,2025-01-02,1500.0,1500.0,1500.0,154
+Telangana,Karimnagar,Karimnagar,Brinjal,Brinjal,FAQ,2025-01-02,1000.0,2000.0,1500.0,35
+Telangana,Mahbubnagar,Shadnagar,Carrot,Carrot,FAQ,2025-01-02,1800.0,2500.0,2300.0,153
+Telangana,Nalgonda,Miryalaguda,Paddy (Dhan)(Common),Samba Masuri,FAQ,2025-01-02,2320.0,2320.0,2320.0,2
+Telangana,Karimnagar,Jammikunta,Cotton,Cotton (Unginned),FAQ,2025-01-02,6200.0,7000.0,6700.0,15
+Telangana,Medak,Vantamamidi,Onion Green,Onion Green,FAQ,2025-01-02,1500.0,2000.0,1750.0,358
+Telangana,Nalgonda,Huzumnagar (Garidepally),Paddy (Dhan)(Common),B P T,FAQ,2025-01-02,2320.0,2320.0,2320.0,2
+Telangana,Karimnagar,Jagtial,Paddy (Dhan)(Common),MTU-1010,FAQ,2025-01-02,1800.0,1900.0,1800.0,2
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Beetroot,Beetroot,FAQ,2025-01-02,3500.0,3500.0,3500.0,157
+Telangana,Mahbubnagar,Shadnagar,Cabbage,Cabbage,FAQ,2025-01-02,1200.0,1800.0,1500.0,154
+Telangana,Hyderabad,Mahboob Manison,Tomato,Deshi,FAQ,2025-01-02,600.0,1000.0,800.0,78
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,3500.0,3500.0,3500.0,85
+Telangana,Hyderabad,Mahboob Manison,French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,4000.0,5000.0,4500.0,298
+Telangana,Warangal,Warangal,Orange,Orange,Small,2025-01-02,2000.0,2000.0,2000.0,18
+Telangana,Hyderabad,Mahboob Manison,Cauliflower,African Sarson,FAQ,2025-01-02,1000.0,1500.0,1250.0,34
+Telangana,Karimnagar,Jagtial,Arhar (Tur/Red Gram)(Whole),777 New Ind,FAQ,2025-01-02,5250.0,5250.0,5250.0,49
+Telangana,Ranga Reddy,Ibrahimputnam,Tomato,Deshi,FAQ,2025-01-02,600.0,1000.0,800.0,78
+Telangana,Khammam,Burgampadu,Paddy (Dhan)(Common),Samba Masuri,FAQ,2025-01-02,2320.0,2320.0,2320.0,2
+Telangana,Ranga Reddy,Ibrahimputnam,Carrot,Carrot,FAQ,2025-01-02,3000.0,4000.0,3500.0,153
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Tomato,Deshi,FAQ,2025-01-02,1200.0,1600.0,1400.0,78
+Telangana,Ranga Reddy,Chevella,Green Chilli,Green Chilly,FAQ,2025-01-02,5000.0,5000.0,5000.0,87
+Telangana,Karimnagar,Karimnagar,Cabbage,Cabbage,FAQ,2025-01-02,1300.0,1300.0,1300.0,154
+Telangana,Warangal,Warangal,Green Chilli,Green Chilly,FAQ,2025-01-02,2500.0,3000.0,2750.0,87
+Telangana,Ranga Reddy,Chevella,Brinjal,Other,FAQ,2025-01-02,3000.0,3000.0,3000.0,35
+Telangana,Warangal,Warangal,French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,4500.0,5000.0,4750.0,298
+Telangana,Nalgonda,Huzurnagar (Matampally),Paddy (Dhan)(Common),B P T,FAQ,2025-01-02,2320.0,2320.0,2320.0,2
+Telangana,Warangal,Warangal,Field Pea,Field Pea,FAQ,2025-01-02,3500.0,4000.0,3750.0,64
+Telangana,Medak,Zaheerabad,Maize,Deshi Red,FAQ,2025-01-02,2162.0,2417.0,2417.0,4
+Telangana,Warangal,Warangal,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,1600.0,2000.0,1800.0,159
+Telangana,Mahbubnagar,Narayanpet,Paddy (Dhan)(Common),Sona,FAQ,2025-01-02,1800.0,2493.0,2479.0,2
+Telangana,Karimnagar,Karimnagar,Beetroot,Beetroot,FAQ,2025-01-02,4000.0,4000.0,4000.0,157
+Telangana,Warangal,Warangal,Colacasia,Colacasia,FAQ,2025-01-02,2500.0,3000.0,2750.0,318
+Telangana,Karimnagar,Jagtial,Paddy (Dhan)(Common),Other,FAQ,2025-01-02,2555.0,2581.0,2581.0,2
+Telangana,Mahbubnagar,Kalwakurthy,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,2500.0,3000.0,2750.0,159
+Telangana,Mahbubnagar,Kalwakurthy,Cabbage,Cabbage,FAQ,2025-01-02,1300.0,1500.0,1400.0,154
+Telangana,Mahbubnagar,Kalwakurthy,Brinjal,Brinjal,FAQ,2025-01-02,1500.0,2500.0,2000.0,35
+Telangana,Mahbubnagar,Kalwakurthy,Bitter gourd,Bitter Gourd,FAQ,2025-01-02,3000.0,5000.0,4000.0,81
+Telangana,Mahbubnagar,Kalwakurthy,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,2000.0,3000.0,2500.0,85
+Telangana,Mahbubnagar,Atmakur,Arhar (Tur/Red Gram)(Whole),Local,FAQ,2025-01-02,7500.0,7700.0,7500.0,49
+Telangana,Khammam,Wyra,Paddy (Dhan)(Common),Swarna Masuri (New),FAQ,2025-01-02,2280.0,2320.0,2300.0,2
+Telangana,Khammam,Madhira,Cotton,Cotton (Unginned),FAQ,2025-01-02,7020.0,7221.0,7121.0,15
+Telangana,Khammam,Enkoor,Cotton,Cotton (Unginned),FAQ,2025-01-02,6700.0,7000.0,6850.0,15
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Potato,(Red Nanital),FAQ,2025-01-02,3000.0,3400.0,3200.0,24
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Green Chilli,Green Chilly,FAQ,2025-01-02,5800.0,6200.0,6000.0,87
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Cauliflower,Cauliflower,FAQ,2025-01-02,1800.0,2200.0,2000.0,34
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Cabbage,Cabbage,FAQ,2025-01-02,2800.0,3200.0,3000.0,154
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Brinjal,Arkasheela Mattigulla,FAQ,2025-01-02,3800.0,4200.0,4000.0,35
+Telangana,Mahbubnagar,Kalwakurthy,Green Chilli,Green Chilly,FAQ,2025-01-02,3000.0,6000.0,4500.0,87
+Telangana,Warangal,Warangal,Cluster beans,Cluster Beans,FAQ,2025-01-02,4000.0,4400.0,4200.0,80
+Telangana,Warangal,Warangal,Ber (Zizyphus/Borehannu),Ber (Zizyphus),Medium,2025-01-02,2500.0,2500.0,2500.0,357
+Telangana,Warangal,Warangal,Tomato,Tomato,FAQ,2025-01-02,800.0,1000.0,900.0,78
+Telangana,Warangal,Warangal,Beetroot,Beetroot,FAQ,2025-01-02,2500.0,3000.0,2750.0,157
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Leafy Vegetable,Leafy Vegetables,FAQ,2025-01-02,2000.0,2000.0,2000.0,171
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Cauliflower,African Sarson,FAQ,2025-01-02,1300.0,1300.0,1300.0,34
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Drumstick,Drumstick,FAQ,2025-01-02,12500.0,12500.0,12500.0,168
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,2300.0,2300.0,2300.0,159
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Colacasia,Colacasia,FAQ,2025-01-02,4000.0,4000.0,4000.0,318
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Cluster beans,Cluster Beans,FAQ,2025-01-02,2800.0,2800.0,2800.0,80
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Carrot,Carrot,FAQ,2025-01-02,3500.0,3500.0,3500.0,153
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Capsicum,Capsicum,FAQ,2025-01-02,4700.0,4700.0,4700.0,164
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Cabbage,Cabbage,FAQ,2025-01-02,1300.0,1300.0,1300.0,154
+Telangana,Warangal,Narsampet,Cotton,Cotton (Unginned),FAQ,2025-01-02,6300.0,6940.0,6825.0,15
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Brinjal,Arkasheela Mattigulla,FAQ,2025-01-02,2300.0,2300.0,2300.0,35
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Bottle gourd,Bottle Gourd,FAQ,2025-01-02,1100.0,1100.0,1100.0,82
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Bitter gourd,Bitter Gourd,FAQ,2025-01-02,3500.0,3500.0,3500.0,81
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Onion,1st Sort,FAQ,2025-01-02,3900.0,3900.0,3900.0,23
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Potato,(Red Nanital),FAQ,2025-01-02,2600.0,2600.0,2600.0,24
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Ridgeguard (Tori),Other,FAQ,2025-01-02,3800.0,3800.0,3800.0,160
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Pumpkin,Other,FAQ,2025-01-02,1300.0,1300.0,1300.0,84
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Tomato,Tomato,FAQ,2025-01-02,1100.0,1100.0,1100.0,78
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Tomato,Deshi,FAQ,2025-01-02,1100.0,1100.0,1100.0,78
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Green Chilli,Green Chilly,FAQ,2025-01-02,4500.0,4500.0,4500.0,87
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Field Pea,Field Pea,FAQ,2025-01-02,4000.0,4000.0,4000.0,64
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Green Chilli,Green Chilly,FAQ,2025-01-02,4500.0,4500.0,4500.0,87
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,4000.0,4000.0,4000.0,298
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Field Pea,Field Pea,FAQ,2025-01-02,4000.0,4000.0,4000.0,64
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,1500.0,1500.0,1500.0,159
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Colacasia,Colacasia,FAQ,2025-01-02,4000.0,4000.0,4000.0,318
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Cauliflower,African Sarson,FAQ,2025-01-02,1300.0,1300.0,1300.0,34
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Carrot,Carrot,FAQ,2025-01-02,3500.0,3500.0,3500.0,153
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Cabbage,Cabbage,FAQ,2025-01-02,1300.0,1300.0,1300.0,154
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-02,3500.0,3500.0,3500.0,85
+Telangana,Ranga Reddy,Mehndipatnam (Rythu Bazar),Beetroot,Beetroot,FAQ,2025-01-02,3500.0,3500.0,3500.0,157
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Yam (Ratalu),Other,FAQ,2025-01-02,6000.0,6000.0,6000.0,297
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Tomato,Deshi,FAQ,2025-01-02,1100.0,1100.0,1100.0,78
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Sweet Potato,Hosur Green,FAQ,2025-01-02,2800.0,2800.0,2800.0,152
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),Snakeguard,Other,FAQ,2025-01-02,1800.0,1800.0,1800.0,156
+Telangana,Ranga Reddy,Kukatpally (Rythu Bazar),French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,4500.0,4500.0,4500.0,298
+Telangana,Medak,Vantamamidi,Green Chilli,Green Chilly,FAQ,2025-01-02,1500.0,2700.0,2100.0,87
+Telangana,Medak,Vantamamidi,Cabbage,Cabbage,FAQ,2025-01-02,600.0,1100.0,850.0,154
+Telangana,Medak,Vantamamidi,French Beans (Frasbean),French Beans (Frasbean),FAQ,2025-01-02,2000.0,3200.0,2600.0,298
+Telangana,Medak,Vantamamidi,Cucumbar (Kheera),Cucumbar,FAQ,2025-01-02,400.0,800.0,600.0,159
+Telangana,Medak,Zaheerabad,Black Gram (Urd Beans)(Whole),Local,FAQ,2025-01-02,3050.0,7312.0,4956.0,8
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Brinjal,Arkasheela Mattigulla,FAQ,2025-01-03,3800.0,4200.0,4000.0,35
+Telangana,Mahbubnagar,Badepalli,Arhar (Tur/Red Gram)(Whole),Local,FAQ,2025-01-03,5000.0,7551.0,7551.0,49
+Telangana,Mahbubnagar,Atmakur,Arhar (Tur/Red Gram)(Whole),Local,FAQ,2025-01-03,7700.0,7700.0,7700.0,49
+Telangana,Medak,Vantamamidi,Bottle gourd,Bottle Gourd,FAQ,2025-01-03,800.0,800.0,800.0,82
+Telangana,Mahbubnagar,Alampur,Maize,Local,FAQ,2025-01-03,1800.0,2300.0,2225.0,4
+Telangana,Khammam,Yellandu,Maize,Deshi Red,FAQ,2025-01-03,2225.0,2225.0,2225.0,4
+Telangana,Khammam,Wyra,Paddy (Dhan)(Common),Swarna Masuri (New),FAQ,2025-01-03,2280.0,2320.0,2300.0,2
+Telangana,Khammam,Sattupalli,Wood,Eucalyptus,FAQ,2025-01-03,400.0,500.0,500.0,203
+Telangana,Khammam,Madhira,Cotton,Cotton (Unginned),FAQ,2025-01-03,6000.0,7200.0,7020.0,15
+Telangana,Mahbubnagar,Narayanpet,Arhar (Tur/Red Gram)(Whole),Local,FAQ,2025-01-03,3000.0,8721.0,8671.0,49
+Telangana,Hyderabad,Bowenpally,Cabbage,Cabbage,FAQ,2025-01-03,500.0,1000.0,800.0,154
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Tomato,Deshi,FAQ,2025-01-03,1000.0,1400.0,1200.0,78
+Telangana,Hyderabad,Bowenpally,Bottle gourd,Bottle Gourd,FAQ,2025-01-03,400.0,800.0,600.0,82
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Potato,(Red Nanital),FAQ,2025-01-03,3800.0,4200.0,4000.0,24
+Telangana,Hyderabad,Bowenpally,Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-03,800.0,2000.0,1600.0,85
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Leafy Vegetable,Leafy Vegetables,FAQ,2025-01-03,4800.0,5200.0,5000.0,171
+Telangana,Adilabad,Laxettipet,Paddy (Dhan)(Common),1001,FAQ,2025-01-03,2500.0,2500.0,2500.0,2
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Green Chilli,Green Chilly,FAQ,2025-01-03,5800.0,6200.0,6000.0,87
+Telangana,Adilabad,Khanapur,Paddy (Dhan)(Common),MTU-1010,FAQ,2025-01-03,2320.0,2320.0,2320.0,2
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Cauliflower,Cauliflower,FAQ,2025-01-03,1800.0,2200.0,2000.0,34
+Telangana,Adilabad,Bhainsa,Soyabean,Yellow,FAQ,2025-01-03,3636.0,4242.0,4242.0,13
+Telangana,Mahbubnagar,Mahabubnagar (Rythu Bazar),Bhindi (Ladies Finger),Bhindi,FAQ,2025-01-03,4800.0,5200.0,5000.0,85
+Telangana,Adilabad,Bhainsa,Cotton,Cotton (Unginned),FAQ,2025-01-03,7221.0,7471.0,7421.0,15
+Telangana,Mahbubnagar,Badepalli,Maize,Local,FAQ,2025-01-03,2462.0,2462.0,2462.0,4
+Telangana,Adilabad,Adilabad,Cotton,Cotton (Unginned),FAQ,2025-01-03,6306.0,6950.0,6950.0,15
+Telangana,Khammam,Kothagudem,Cotton,Cotton (Unginned),FAQ,2025-01-03,7400.0,7400.0,7400.0,15
+Telangana,Hyderabad,Bowenpally,Cauliflower,African Sarson,FAQ,2025-01-03,500.0,1000.0,900.0,34
+Telangana,Khammam,Khammam,Cotton,Cotton (Unginned),FAQ,2025-01-03,6000.0,7150.0,6900.0,15

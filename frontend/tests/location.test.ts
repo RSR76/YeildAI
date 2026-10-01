@@ -6,6 +6,10 @@ import type { Location } from '../lib/types';
 const SUPPORTED_LOCATIONS: Location[] = [
     { state: 'Uttar Pradesh', district: 'Barabanki' },
     { state: 'Maharashtra', district: 'Nashik' },
+    // Telangana-first: DEFAULT_LOCATION (lib/mockData.ts) now points here, so
+    // it must be present for the "falls back to DEFAULT_LOCATION" test below
+    // to exercise the genuinely-supported case rather than an unsupported one.
+    { state: 'Telangana', district: 'Warangal' },
 ];
 
 describe('findSupportedMatch', () => {

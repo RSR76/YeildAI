@@ -6,8 +6,20 @@ import RecommendationsPage from '../app/(app)/recommendations/page';
 import { getRecommendations } from '../lib/dataService';
 import type { EffectiveLocation, FarmLocationStatus, Recommendation } from '../lib/types';
 
+// A real AuthContext only produces a new `activeFarm` reference when the
+// farm actually changes — this must be a stable module-level object, not a
+// fresh literal returned on every call. `activeFarm` is a dependency of the
+// data-fetching useEffect in RecommendationsPage; a non-memoized mock here
+// makes that effect see a "changed" dependency on every single render,
+// re-firing indefinitely (each run unconditionally calls
+// setExpandedCropIds(new Set()), which is never referentially equal to the
+// previous Set and so always triggers another render) — an infinite
+// render/effect loop that manifests as the vitest worker running out of
+// heap, not a real defect in RecommendationsPage itself.
+const mockActiveFarm = { id: 'farm-1', state: 'Telangana', district: 'Warangal' };
+
 vi.mock('../lib/auth/AuthContext', () => ({
-    useAuth: () => ({ activeFarm: { id: 'farm-1', state: 'Telangana', district: 'Warangal' } }),
+    useAuth: () => ({ activeFarm: mockActiveFarm }),
 }));
 
 const baseEffectiveLocation: EffectiveLocation = {

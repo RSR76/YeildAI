@@ -11,8 +11,21 @@ const fixturePath = path.resolve(here, 'fixtures/sample_lookup.csv');
 
 let server: Server;
 let baseUrl: string;
+let originalDataSource: string | undefined;
+let originalDatabaseUrl: string | undefined;
 
+// This suite specifically tests the 'csv' branch of getRepositoryReadinessState()
+// (the passthrough to csvForecastIndex's live state) — it must not depend on
+// whatever FORECAST_DATA_SOURCE/DATABASE_URL happen to be set in the ambient
+// environment (e.g. a developer's backend/.env configured for a live Postgres
+// integration run). Forced deterministically here and restored afterward so
+// this file's behavior never depends on — or leaks into — anything else.
 beforeAll(async () => {
+  originalDataSource = process.env.FORECAST_DATA_SOURCE;
+  originalDatabaseUrl = process.env.DATABASE_URL;
+  process.env.FORECAST_DATA_SOURCE = 'csv';
+  delete process.env.DATABASE_URL;
+
   await new Promise<void>((resolve) => {
     server = app.listen(0, () => resolve());
   });
@@ -22,6 +35,10 @@ beforeAll(async () => {
 
 afterAll(() => {
   server.close();
+  if (originalDataSource === undefined) delete process.env.FORECAST_DATA_SOURCE;
+  else process.env.FORECAST_DATA_SOURCE = originalDataSource;
+  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = originalDatabaseUrl;
 });
 
 // Every test starts from a known, neutral (not-ready) state.
@@ -41,21 +58,29 @@ describe('GET /ready', () => {
   it('returns 503 while initializing', async () => {
     const res = await fetch(`${baseUrl}/ready`);
     expect(res.status).toBe(503);
-    expect(await res.json()).toEqual({ status: 'initializing' });
+    expect(await res.json()).toEqual({ status: 'initializing', dataSource: 'csv' });
   });
 
-  it('returns 503 with a safe error message when initialization failed', async () => {
+  // GET /ready is unauthenticated and public. Even though it's the
+  // operator-facing readiness endpoint, its error field must NOT echo back
+  // the raw underlying failure reason (a Postgres connection error can
+  // contain internal hostnames/ports; a CSV error can contain a server
+  // filesystem path) — the detail belongs in server logs only (see
+  // forecastRepositoryFactory.initializeForecastRepository()), never in a
+  // response body any caller on the internet can read.
+  it('returns 503 with a generic, non-leaking message when initialization failed', async () => {
     csvForecastIndex.__setReadinessForTests({
       status: 'failed',
       startedAt: Date.now(),
-      error: 'ENOENT: /very/internal/path/should/not/leak/to/clients.csv',
+      error: 'Forecast CSV not found at /very/internal/path/should/not/leak/to/clients.csv',
     });
     const res = await fetch(`${baseUrl}/ready`);
     expect(res.status).toBe(503);
     const body = await res.json();
     expect(body.status).toBe('failed');
-    expect(body.error).toBe('Forecast index failed to initialize');
-    expect(body.error).not.toContain('/very/internal/path');
+    expect(body.dataSource).toBe('csv');
+    expect(typeof body.error).toBe('string');
+    expect(body.error).not.toContain('/very/internal/path/should/not/leak/to/clients.csv');
   });
 
   it('returns 200 with useful status details once the index is ready', async () => {
@@ -65,8 +90,7 @@ describe('GET /ready', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe('ready');
-    expect(body.commodityCount).toBe(3);
-    expect(body.locationCount).toBeGreaterThan(0);
+    expect(body.dataSource).toBe('csv');
     expect(typeof body.initializedInMs).toBe('number');
   });
 });

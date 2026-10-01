@@ -16,16 +16,22 @@ import type {
         Recommendation,
         MarketAnalysis,
         Broker,
-        Report,
         FarmProfile,
         SoilSample,
         YieldPoint,
         WeatherDay,
     } from './types';
     
+    // Telangana-first default (Phase 11): used only when no farm is active and
+    // no map/manual override is set. Warangal is one of the 13 Telangana
+    // districts seeded in backend/db/migrations/005_seed_states_and_telangana_districts.sql.
+    // This no longer matches the pre-existing mock forecast rows below (which
+    // predate the Telangana-first decision and were never wired into
+    // dataService.ts / any live page) — they're kept only for any other stale
+    // reference and are not treated as authoritative demo data.
     export const DEFAULT_LOCATION = {
-        state: 'Uttar Pradesh',
-        district: 'Barabanki',
+        state: 'Telangana',
+        district: 'Warangal',
     };
     
     export const mockFarmProfile: FarmProfile = {
@@ -289,30 +295,6 @@ import type {
             commodities: ['Tomato', 'Onion'],
             rating: 3.9,
             verified: false,
-        },
-    ];
-    
-    export const mockReports: Report[] = [
-        {
-            id: 'report-001',
-            title: 'Kharif 2026 Crop Recommendation Summary',
-            type: 'Recommendation',
-            createdAt: '2026-06-30',
-            summary: 'Ranked crop opportunities for Barabanki district based on demand-supply signals and MSP margins.',
-        },
-        {
-            id: 'report-002',
-            title: 'Soybean vs. Wheat — Risk Comparison',
-            type: 'Risk Analysis',
-            createdAt: '2026-06-22',
-            summary: 'Side-by-side weather, volatility, and oversupply risk profile across the two crops.',
-        },
-        {
-            id: 'report-003',
-            title: 'June Mandi Price Trend Report',
-            type: 'Market',
-            createdAt: '2026-06-05',
-            summary: 'Monthly price movement and arrival volume trends for tracked commodities in Barabanki mandi.',
         },
     ];
     

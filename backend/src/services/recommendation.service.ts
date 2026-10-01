@@ -1,4 +1,5 @@
-import * as csvForecastIndex from '../lib/csvForecastIndex.js';
+import { getForecastRepository } from '../repositories/forecastRepositoryFactory.js';
+import type { ForecastRepository } from '../repositories/forecastRepository.js';
 import { STATIC_CROPS } from '../lib/staticData.js';
 
 /**
@@ -144,13 +145,35 @@ function rankRecommendations<T extends RankableRecommendation>(recommendations: 
  * changed. prisma/schema.prisma and prisma/seed.ts are untouched.
  */
 export class RecommendationService {
+  // Lazily resolved per call — see forecast.service.ts for why this can't
+  // be captured in the constructor (module-load-time instantiation in
+  // recommendation.controller.ts happens before startup initialization runs).
+  private readonly override?: ForecastRepository | undefined;
+
+  constructor(repository?: ForecastRepository) {
+    this.override = repository;
+  }
+
+  private repo(): ForecastRepository {
+    return this.override ?? getForecastRepository();
+  }
+
   async getRecommendations(state: string, district: string) {
     const crops = STATIC_CROPS;
 
+    // Fetch every crop's forecasts concurrently rather than one at a time:
+    // under CsvForecastRepository this was always an in-memory Map lookup
+    // (sequential cost was negligible), but under PostgresForecastRepository
+    // each call is a real DB round trip, and this loop runs on every
+    // /api/recommendations request — issuing them in parallel turns ~12
+    // sequential round trips into 1 round trip's worth of wall-clock time.
+    const forecastsByCrop = await Promise.all(crops.map((crop) => this.repo().getAllLatest(crop.name)));
+
     const recommendations = [];
 
-    for (const crop of crops) {
-      const cropForecasts = csvForecastIndex.getAllLatestForecasts(crop.name);
+    for (let i = 0; i < crops.length; i++) {
+      const crop = crops[i]!;
+      const cropForecasts = forecastsByCrop[i]!;
 
       // Find the latest forecast for this crop in the specified location
       // We first try district, then fall back to state-wide average if needed
@@ -223,9 +246,8 @@ export class RecommendationService {
 
   async getMarketAnalysis(commodity: string, state: string) {
     // Aggregate data for a commodity across markets in a state
-    const forecasts = csvForecastIndex
-      .getAllLatestForecasts(commodity)
-      .filter((f) => f.state.toLowerCase() === state.toLowerCase());
+    const allForecasts = await this.repo().getAllLatest(commodity);
+    const forecasts = allForecasts.filter((f) => f.state.toLowerCase() === state.toLowerCase());
 
     const totalMarkets = forecasts.length;
     const risingMarkets = forecasts.filter((f) => f.predictedPriceTrend === 'Rising').length;

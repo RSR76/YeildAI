@@ -8,17 +8,17 @@
 import 'dotenv/config';
 
 import app from './app.js';
-import { initializeForecastIndex } from './lib/csvForecastIndex.js';
+import { initializeForecastRepository } from './repositories/forecastRepositoryFactory.js';
 
 const PORT = process.env.PORT || 3001;
 
-// The CSV index build is synchronous and can briefly block the event loop,
-// so it runs from the listen callback rather than before it: the port opens
-// first (so the process is reachable as early as possible), then
+// Repository initialization (CSV index build, or a Postgres connection
+// check) runs from the listen callback rather than before it: the port
+// opens first (so the process is reachable as early as possible), then
 // initialization runs. Forecast/recommendation routes stay gated by
-// requireForecastIndexReady (app.ts) the entire time; only GET /ready and
-// GET /health respond during that window once the event loop is free.
+// requireForecastRepositoryReady (app.ts) the entire time; only GET /ready
+// and GET /health respond during that window.
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  initializeForecastIndex();
+  void initializeForecastRepository();
 });
