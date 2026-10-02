@@ -42,7 +42,7 @@ export default function FarmSelectPage() {
 
               <span className="font-[var(--font-display)] text-xl font-semibold">
                 <span className="text-[var(--forest-900)]">
-                  Yeild
+                  Bhavi
                 </span>
 
                 <span className="text-[var(--forest-600)]">
